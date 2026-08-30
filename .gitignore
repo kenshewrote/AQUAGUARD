@@ -1,0 +1,27 @@
+# environments
+venv/
+__pycache__/
+*.pyc
+
+# trained model artifacts (too large, regenerable via training scripts)
+models/
+AutogluonModels/
+*.pt
+*.pth
+
+# datasets (large, or not yours to redistribute - check dataset licenses)
+*.xlsx
+*.csv
+!sample_data/*.csv
+
+# local-only files
+.env
+*.log
+
+# OS/editor junk
+.DS_Store
+.vscode/
+Thumbs.db
+
+# test/build artifacts
+.pytest_cache/

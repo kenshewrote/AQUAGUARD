@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaGuard — Predictive Dissolved Oxygen &amp; Automation | FN&amp;AI Lab</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ============ REAL TOKENS, from 01-tokens.css ============ */
+:root {
+  --gold: #efa522;
+  --gold-light: #fdb814;
+  --gold-pale: #fff3d6;
+  --gold-deep: #7f5509;
+  --gold-hover: #d89010;
+  --crimson: #cc4b37;
+  --navy: #000000;
+  --navy-mid: #0a0a0a;
+  --paper: #ffffff;
+  --warm-white: #f7f7f7;
+  --rule: #e6e6e6;
+  --ink: #181818;
+  --ink-soft: #575756;
+  --ink-ghost: #8a8a8a;
+  --display: "Bebas Neue", "Oswald", sans-serif;
+  --serif: "Archivo Black", system-ui, sans-serif;
+  --sans: "Open Sans", system-ui, -apple-system, sans-serif;
+  --ui: "Archivo", "Open Sans", system-ui, sans-serif;
+  --garamond: "EB Garamond", Georgia, "Times New Roman", serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --safe: #2e8b47;
+  --warn: #c98a12;
+  --danger: #cc4b37;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--paper); color: var(--ink); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; }
+:focus-visible { outline: 3px solid var(--gold-deep); outline-offset: 2px; }
+
+/* square corners — the UAPB signature, on the instrument-panel elements */
+.kpi-cell, .chart-cell, .mtr-box, .lab-logo-box { border-radius: 0 !important; }
+
+/* ============ SCROLL REVEALS (matches 06-reveals-responsive.css) ============ */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out); }
+.reveal.in-view { opacity: 1; transform: translateY(0); }
+.d1 { transition-delay: 0.08s; }
+.d2 { transition-delay: 0.16s; }
+.d3 { transition-delay: 0.24s; }
+.d4 { transition-delay: 0.32s; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ============ UAPB TITLE BAR — real markup/CSS from 07-brand-header.css ============ */
+:root {
+  --tb-scale: 1.1;
+  --tb-maxw: 87rem;
+  --tb-gutter: 54px;
+  --tb-text-offset: 0px;
+  --tb-logo-w: 13rem;
+  --tb-logo-w-eff: calc(var(--tb-logo-w) * var(--tb-scale));
+  --tb-logo-fill: 72%;
+  --tb-logo-top: -13px;
+  --tb-logo-pad-top: 33px;
+  --tb-logo-pad-bottom: 70px;
+  --tb-border-color: #ffffff;
+  --tb-crest-height: 82%;
+  --tb-crest-offset: -62px;
+  --tb-tag-font: "EB Garamond", Georgia, serif;
+  --tb-tag-size: 0.89rem;
+  --tb-tag-weight: 400;
+  --tb-tag-ls: 0.03em;
+  --tb-tag-color: #efa522;
+  --tb-tag-gap: 28px;
+  --tb-black-h: 87px;
+  --tb-top-gap: 21px;
+  --tb-findinfo-font: "Archivo", sans-serif;
+  --tb-findinfo-size: 1.32rem;
+  --tb-findinfo-weight: 900;
+  --tb-findinfo-ls: 0.02em;
+  --tb-util-font: "Open Sans", sans-serif;
+  --tb-util-size: 1.04rem;
+  --tb-util-weight: 500;
+  --tb-util-ls: 0.01em;
+  --tb-util-gap: 20px;
+  --tb-cta-font: "Archivo", sans-serif;
+  --tb-cta-size: 1.57rem;
+  --tb-cta-weight: 900;
+  --tb-cta-ls: 0em;
+  --tb-cta-pad-x: 1.15rem;
+  --tb-nav-h: 121px;
+  --tb-nav-font: "Bebas Neue", sans-serif;
+  --tb-nav-size: 1.72rem;
+  --tb-nav-weight: 500;
+  --tb-nav-ls: 0.045em;
+  --tb-nav-gap: 29px;
+  --tb-nav-pad-x: 0.35rem;
+  --tb-nav-pad-y: 0.85rem;
+  --tb-white-font: "Bebas Neue", sans-serif;
+  --tb-white-size: 1.35rem;
+  --tb-white-weight: 400;
+  --tb-white-ls: 0.04em;
+  --tb-white-pad: 14px;
+  --tb-black-bg: #000000;
+  --tb-nav-bg: #efa522;
+  --tb-white-bg: #ffffff;
+  --tb-accent: #efa522;
+  --tb-findinfo-color: #ffffff;
+  --tb-util-color: #ffffff;
+  --tb-cta-color: #ffffff;
+  --tb-nav-color: #000000;
+  --tb-white-color: #111111;
+  --tb-clear: calc(var(--tb-logo-w-eff) + var(--tb-gutter) + var(--tb-text-offset));
+}
+.uapb-titlebar { position: relative; background: var(--tb-black-bg); z-index: 50; }
+.uapb-titlebar .tb-inner,
+.uapb-titlebar .tb-nav,
+.uapb-titlebar .tb-roar > span { max-width: var(--tb-maxw); margin: 0 auto; padding-left: var(--tb-clear); padding-right: var(--tb-gutter); }
+.tb-top { background: var(--tb-black-bg); }
+.tb-inner { display: flex; align-items: center; gap: var(--tb-top-gap); min-height: var(--tb-black-h); }
+.tb-findinfo { font-family: var(--tb-findinfo-font); font-weight: var(--tb-findinfo-weight); text-transform: uppercase; font-size: calc(var(--tb-findinfo-size) * var(--tb-scale)); letter-spacing: var(--tb-findinfo-ls); color: var(--tb-findinfo-color); background: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0; }
+.tb-findinfo span { color: var(--tb-accent); font-size: 0.6em; }
+.tb-util { display: flex; align-items: center; gap: var(--tb-util-gap); }
+.tb-util a { font-family: var(--tb-util-font); font-weight: var(--tb-util-weight); font-size: calc(var(--tb-util-size) * var(--tb-scale)); color: var(--tb-util-color); text-decoration: none; letter-spacing: var(--tb-util-ls); }
+.tb-util a:hover { color: var(--tb-accent); }
+.tb-cta { display: flex; align-items: stretch; align-self: stretch; margin-left: auto; }
+.tb-give, .tb-apply { font-family: var(--tb-cta-font); font-weight: var(--tb-cta-weight); text-transform: uppercase; font-size: calc(var(--tb-cta-size) * var(--tb-scale)); letter-spacing: var(--tb-cta-ls); line-height: 1; color: var(--tb-cta-color); text-decoration: none; display: flex; align-items: center; padding: 0 var(--tb-cta-pad-x); border-left: 0.1875rem solid var(--tb-accent); transition: color var(--ease-out) 0.2s; }
+.tb-apply { border-right: 0.1875rem solid var(--tb-accent); }
+.tb-give:hover, .tb-apply:hover { color: var(--tb-accent); }
+.tb-search-wrap { position: relative; display: flex; align-items: center; }
+.tb-search { display: flex; align-items: center; justify-content: center; width: 54px; align-self: stretch; background: none; border: 0; color: var(--tb-findinfo-color); cursor: pointer; }
+.tb-search:hover { color: var(--tb-accent); }
+.tb-search svg { width: 24px; height: 24px; }
+.tb-search-input { width: 0; opacity: 0; padding: 0; border: 0; border-bottom: 2px solid #fff; background: transparent; font-family: var(--ui); font-size: 0.9rem; color: #fff; transition: width 0.25s var(--ease-out), opacity 0.2s; }
+.tb-search-wrap.open .tb-search-input { width: 160px; opacity: 1; padding: 0.3rem 0.2rem; margin-right: 0.5rem; }
+.tb-search-input::placeholder { color: rgba(255,255,255,0.6); }
+.tb-menu-btn { display: none; }
+.tb-mobile-menu { display: none; }
+.tb-goldbar { background: var(--tb-nav-bg); }
+.tb-nav { display: flex; align-items: center; gap: var(--tb-nav-gap); min-height: var(--tb-nav-h); }
+.tb-nav a { font-family: var(--tb-nav-font); font-weight: var(--tb-nav-weight); text-transform: uppercase; letter-spacing: var(--tb-nav-ls); font-size: calc(var(--tb-nav-size) * var(--tb-scale)); color: var(--tb-nav-color); text-decoration: none; padding: var(--tb-nav-pad-y) var(--tb-nav-pad-x); position: relative; white-space: nowrap; }
+.tb-nav a:hover { color: #4a3406; }
+.tb-nav a::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 7px solid transparent; border-bottom-color: var(--tb-nav-color); opacity: 0; transition: opacity 0.2s; }
+.tb-nav a:hover::after { opacity: 1; }
+.tb-crest { position: absolute; top: var(--tb-logo-top); left: max(var(--tb-gutter), calc((100vw - var(--tb-maxw)) / 2 + var(--tb-gutter))); width: var(--tb-logo-w-eff); z-index: 3; text-decoration: none; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.45)); transform: translateX(var(--tb-crest-offset)); }
+.tb-crest-in { display: block; background: var(--tb-border-color); clip-path: polygon(0 0, 100% 0, 100% var(--tb-crest-height), 50% 100%, 0 var(--tb-crest-height)); padding: 2px; }
+.tb-crest-panel { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: var(--tb-tag-gap); background: var(--tb-black-bg); clip-path: polygon(0 0, 100% 0, 100% var(--tb-crest-height), 50% 100%, 0 var(--tb-crest-height)); padding: var(--tb-logo-pad-top) 7px var(--tb-logo-pad-bottom); }
+.tb-crest-panel img { width: var(--tb-logo-fill); height: auto; }
+.tb-crest-tag { font-family: var(--tb-tag-font); font-weight: 600; font-size: calc(1.05rem * var(--tb-scale)); line-height: 1.15; letter-spacing: var(--tb-tag-ls); text-transform: uppercase; text-align: center; color: var(--tb-tag-color); }
+.tb-crest-tag-sub { display: inline-block; margin-top: 2px; font-weight: var(--tb-tag-weight); font-size: 0.62em; letter-spacing: 0.02em; color: rgba(255,255,255,0.65); }
+.tb-roar { background: var(--tb-white-bg); border-top: 1px solid rgba(0,0,0,0.08); }
+.tb-roar > span { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: var(--tb-white-pad); padding-bottom: var(--tb-white-pad); }
+
+@media (max-width: 900px) {
+  :root {
+    --tb-scale: 0.8;
+    --tb-logo-w: 9rem;
+    --tb-crest-offset: 0px;
+    --tb-gutter: 16px;
+    --tb-top-gap: 12px;
+    --tb-nav-h: 74px;
+    --tb-nav-gap: 12px;
+  }
+  .tb-inner { flex-wrap: wrap; row-gap: 2px; }
+  .tb-util { gap: 12px; }
+  .tb-nav { flex-wrap: wrap; }
+  .tb-search-wrap.open .tb-search-input { width: 110px; }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --tb-scale: 0.62;
+    --tb-logo-w: 8rem;
+    --tb-black-h: 52px;
+    --tb-crest-offset: 0px;
+    --tb-logo-top: -6px;
+    --tb-gutter: 12px;
+    --tb-top-gap: 8px;
+    --tb-nav-h: 52px;
+    --tb-nav-gap: 4px;
+    --tb-cta-pad-x: 0.7rem;
+  }
+  .tb-findinfo, .tb-util, .tb-goldbar { display: none; }
+  .tb-inner { justify-content: flex-end; align-items: center; min-height: 52px; }
+  .tb-cta { margin-left: 0; align-self: center; align-items: center; gap: 2px; }
+  .tb-give, .tb-apply { display: flex; align-items: center; padding: 0.5rem 0.8rem; font-size: 0.78rem; }
+  .tb-menu-btn { display: inline-flex; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 10px; margin-left: 6px; background: none; border: 0; cursor: pointer; }
+  .tb-menu-btn span { display: block; height: 2px; border-radius: 2px; background: var(--gold); transition: transform 0.25s, opacity 0.2s; }
+  .tb-menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .tb-menu-btn.open span:nth-child(2) { opacity: 0; }
+  .tb-menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .tb-mobile-menu { display: flex; flex-direction: column; background: var(--tb-black-bg); border-top: 1px solid rgba(255,255,255,0.12); padding: 8px 0 14px; }
+  .tb-mobile-menu[hidden] { display: none; }
+  .tb-mobile-menu a { font-family: var(--tb-nav-font); font-size: 1.25rem; letter-spacing: 0.05em; text-transform: uppercase; color: #fff; text-decoration: none; padding: 0.6rem 16px 0.6rem calc(var(--tb-clear) + 26px); }
+  .tb-mobile-menu a:active, .tb-mobile-menu a:hover { color: var(--gold); }
+  .tb-mm-rule { height: 1px; margin: 8px 16px 8px calc(var(--tb-clear) + 26px); background: rgba(255,255,255,0.14); }
+  .tb-mobile-menu a.tb-mm-util { font-family: var(--tb-util-font); font-size: 0.82rem; text-transform: none; letter-spacing: 0.01em; color: rgba(255,255,255,0.82); padding: 0.45rem 16px 0.45rem calc(var(--tb-clear) + 26px); }
+  .tb-nav a { padding: 0.5rem 0.45rem; }
+  .tb-roar-row { min-height: 10px; }
+  .tb-crest-tag { font-size: 0.62rem; letter-spacing: 0; }
+  .tb-crest-panel { gap: 10px; padding-top: 14px; padding-bottom: 34px; }
+}
+
+@media (max-width: 400px) {
+  :root { --tb-scale: 0.55; --tb-logo-w: 7rem; }
+}
+
+/* ============ INTRO (matches .intro-av) ============ */
+.intro-av { padding: clamp(56px,8vw,96px) clamp(20px,4vw,72px) clamp(40px,6vw,64px); background: var(--paper); text-align: center; border-bottom: 1px solid var(--rule); }
+.intro-av-inner { max-width: 920px; margin: 0 auto; }
+.intro-av-eyebrow { font-family: var(--ui); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 14px; }
+.intro-av-h2 { font-family: var(--display); font-weight: 400; font-size: clamp(2.6rem,7vw,5rem); line-height: 0.92; letter-spacing: 0.01em; text-transform: uppercase; color: var(--ink); margin-bottom: 22px; }
+.intro-av-h2 em { font-style: normal; color: var(--gold); }
+.intro-av-lead { font-family: var(--sans); font-size: clamp(1rem,1.4vw,1.12rem); line-height: 1.75; color: var(--ink-soft); font-weight: 300; margin: 0 auto 18px; max-width: 720px; }
+.intro-av-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
+.intro-av-chip { display: inline-flex; align-items: center; gap: 8px; font-family: var(--ui); font-size: 0.74rem; font-weight: 600; color: var(--ink); padding: 9px 16px; border: 1px solid var(--rule); border-radius: 100px; background: var(--warm-white); }
+.intro-av-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(239,165,34,0.18); }
+
+/* ============ SPECIES PILLS (matches .ic-species-strip) ============ */
+.ic-species-strip { max-width: 1560px; margin: clamp(28px,3vw,40px) auto 0; display: flex; justify-content: center; padding: 0 20px; }
+.ic-species-strip .species-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 5px; border: 1px solid var(--rule); border-radius: 999px; background: rgba(255,255,255,0.82); box-shadow: 0 2px 10px -4px rgba(24,24,24,0.16); }
+.sp-pill { font-family: var(--ui); font-size: clamp(0.7rem,1.1vw,0.82rem); font-style: italic; font-weight: 500; letter-spacing: 0.03em; padding: 9px 20px; border: 0; border-radius: 999px; background: none; color: var(--ink-soft); cursor: pointer; transition: color 0.22s, background 0.22s; }
+.sp-pill:hover { color: var(--ink); background: rgba(24,24,24,0.05); }
+.sp-pill.active { color: #2a1c02; font-weight: 700; font-style: normal; background: linear-gradient(180deg,#f6bb46,var(--gold)); box-shadow: 0 4px 16px -6px rgba(239,165,34,0.95); }
+
+/* ============ RESEARCH PROGRAMS (real content, matches .programs-grid) ============ */
+.programs-section { padding: clamp(48px,6vw,80px) clamp(20px,4vw,72px); border-top: 1px solid var(--rule); background: var(--paper); }
+.programs-inner { max-width: 1400px; margin: 0 auto; }
+.programs-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: 32px; }
+.program-cell { background: var(--paper); padding: 26px 20px 22px; transition: background 200ms var(--ease-out); position: relative; overflow: hidden; }
+.program-cell::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:var(--gold); transform:scaleX(0); transform-origin:left; transition:transform 240ms var(--ease-out); }
+.program-cell:hover { background:#fff; }
+.program-cell:hover::before { transform: scaleX(1); }
+.program-cell.featured { background: var(--gold-pale); }
+.program-cell.featured::before { transform: scaleX(1); }
+.prog-num { font-family: var(--serif); font-size: 2.2rem; color: var(--gold); line-height: 1; margin-bottom: 10px; font-style: italic; }
+.prog-title { font-family: var(--serif); font-size: 0.95rem; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.005em; }
+.prog-desc { font-size: 0.72rem; color: var(--ink-soft); line-height: 1.6; font-weight: 300; }
+.prog-tag { display: inline-block; margin-top: 10px; font-family: var(--ui); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-deep); }
+@media (max-width: 900px) { .programs-grid { grid-template-columns: repeat(2,1fr); } }
+
+/* ============ NEWS (real content + styling, matches .news-grid) ============ */
+.news-section { padding: clamp(48px,6vw,80px) clamp(20px,4vw,72px); background: var(--warm-white); border-top: 1px solid var(--rule); }
+.news-inner { max-width: 1400px; margin: 0 auto; }
+.news-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+.view-all { font-family: var(--ui); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-deep); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.news-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.news-card { background: #fff; transition: background 200ms var(--ease-out); }
+.news-card:hover { background: var(--paper); }
+.news-thumb { width: 100%; height: 150px; background: var(--navy); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+.news-thumb-bg { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(196,146,10,0.2), rgba(0,0,0,0.7)); }
+.news-thumb svg { width: 34px; height: 34px; color: rgba(255,255,255,0.18); position: relative; z-index: 1; }
+.news-body { padding: 18px; }
+.news-tags { display: flex; gap: 6px; margin-bottom: 9px; flex-wrap: wrap; }
+.news-tag { font-family: var(--ui); font-size: 0.53rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-deep); padding: 2px 8px; border: 1px solid rgba(196,146,10,0.25); border-radius: 100px; }
+.news-title { font-family: var(--serif); font-size: 0.92rem; color: var(--ink); line-height: 1.35; margin-bottom: 8px; letter-spacing: -0.005em; }
+.news-meta { font-family: var(--sans); font-size: 0.63rem; color: var(--ink-ghost); }
+@media (max-width: 900px) { .news-grid { grid-template-columns: 1fr; } }
+
+.readout-section {
+  padding: clamp(32px,4.5vw,64px) clamp(20px,4vw,72px) clamp(44px,5vw,72px);
+  background: var(--warm-white);
+  border-bottom: 1px solid var(--rule);
+}
+.readout-grid {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 360px 1fr; gap: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) { .readout-grid { grid-template-columns: 1fr; } }
+
+.panel { background: #fff; border: 1px solid var(--rule); padding: 22px; }
+.panel-title { font-family: var(--ui); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-ghost); margin-bottom: 16px; }
+
+/* gauge */
+.gauge-panel { text-align: center; }
+.gauge-wrap { position: relative; width: 210px; height: 210px; margin: 0 auto; }
+.gauge-val { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: var(--ui); font-weight: 800; font-size: 2.2rem; color: var(--gold-deep); }
+.gauge-val.danger { color: var(--danger); }
+.gauge-val.warn { color: var(--warn); }
+.gauge-val.safe { color: var(--safe); }
+.gauge-val.idle { color: var(--ink-ghost); }
+.gauge-unit { font-family: var(--sans); font-size: 0.85rem; color: var(--ink-ghost); display: block; margin-top: 2px; font-weight: 400; }
+.gauge-label { margin-top: 12px; font-family: var(--garamond); font-style: italic; font-size: 0.92rem; color: var(--ink-soft); }
+.live-source { margin-top: 8px; font-family: var(--ui); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-ghost); }
+
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: 20px; }
+.stat-box { background: #fff; padding: 14px; }
+.stat-box .num { font-family: var(--ui); font-size: 1.35rem; font-weight: 800; color: var(--ink); }
+.stat-box .lbl { font-family: var(--ui); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-ghost); margin-top: 4px; }
+
+.hw-status { margin-top: 18px; display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.hw-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fff; font-family: var(--sans); font-size: 0.82rem; color: var(--ink-soft); }
+.hw-state { font-family: ui-monospace,monospace; font-size: 0.66rem; font-weight: 700; padding: 3px 8px; }
+.hw-state.on { background: rgba(204,75,55,0.12); color: var(--danger); }
+.hw-state.off { background: rgba(24,24,24,0.06); color: var(--ink-ghost); }
+
+.controls { display: flex; gap: 10px; margin-top: 20px; }
+.btn-run { flex: 1; font-family: var(--ui); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; background: var(--gold); color: #000; border: 2px solid var(--gold); border-radius: 0; padding: 11px; cursor: pointer; transition: all 200ms var(--ease-out); }
+.btn-run:hover { background: var(--gold-hover); border-color: var(--gold-hover); }
+.btn-run:disabled { opacity: 0.55; cursor: default; }
+.btn-reset { font-family: var(--ui); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; background: none; border: 2px solid var(--ink); color: var(--ink); padding: 11px 16px; cursor: pointer; }
+.btn-reset:hover { background: var(--ink); color: #fff; }
+
+/* ledger panel */
+.ledger-panel { grid-column: 1 / -1; }
+.ledger-tbl2 { width: 100%; border-collapse: collapse; font-family: ui-monospace,"SF Mono",Menlo,monospace; }
+.ledger-tbl2 th { text-align: left; font-family: var(--ui); font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-ghost); padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+.ledger-tbl2 td { padding: 11px 12px; font-size: 0.78rem; color: var(--ink); border-bottom: 1px solid var(--rule); }
+.ledger-tbl2 tr:hover td { background: var(--gold-pale); }
+.tag2 { padding: 3px 9px; font-size: 0.64rem; font-weight: 700; font-family: var(--ui); }
+.tag2.safe { background: rgba(46,139,71,0.12); color: var(--safe); }
+.tag2.warn { background: rgba(201,138,18,0.12); color: var(--warn); }
+.tag2.danger { background: rgba(204,75,55,0.12); color: var(--danger); }
+.src-tag { font-family: var(--ui); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-ghost); margin-left: 6px; }
+
+.banner { margin-top: 16px; padding: 13px 16px; font-family: var(--ui); font-size: 0.82rem; display: flex; align-items: center; gap: 10px; border-left: 3px solid; text-align: left; }
+.banner.safe { background: rgba(46,139,71,0.06); border-color: var(--safe); color: var(--safe); }
+.banner.warn { background: rgba(201,138,18,0.06); border-color: var(--warn); color: var(--warn); }
+.banner.danger { background: rgba(204,75,55,0.06); border-color: var(--danger); color: var(--danger); }
+.banner.idle { background: rgba(24,24,24,0.04); border-color: var(--ink-ghost); color: var(--ink-ghost); }
+.banner-bold { font-size: 0.98rem; font-weight: 700; border-left-width: 4px; padding: 15px 18px; }
+.banner-bold strong { font-weight: 800; }
+.banner.danger.banner-bold { background: rgba(204,75,55,0.1); }
+
+/* ============ MANUAL SENSOR ENTRY (part of the tool) ============ */
+.manual-panel { margin-top: 0; }
+.manual-intro { font-family: var(--sans); font-size: 0.82rem; color: var(--ink-soft); line-height: 1.7; max-width: 74ch; margin-bottom: 20px; font-weight: 300; }
+.manual-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.manual-tab { font-family: var(--ui); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 18px; border: 2px solid var(--rule); background: #fff; color: var(--ink-soft); cursor: pointer; transition: all 180ms var(--ease-out); }
+.manual-tab:hover { border-color: var(--ink-ghost); }
+.manual-tab.active { border-color: var(--ink); color: var(--ink); background: var(--gold-pale); }
+.manual-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.manual-row label, .seq-row label { display: flex; flex-direction: column; gap: 6px; font-family: var(--ui); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-ghost); flex: 1; min-width: 130px; }
+.manual-row input, .seq-row input { font-family: ui-monospace,monospace; font-size: 0.92rem; padding: 11px 12px; border: 1px solid var(--rule); background: var(--warm-white); color: var(--ink); width: 100%; }
+.manual-row input:focus, .seq-row input:focus { outline: none; border-color: var(--gold); background: #fff; }
+.manual-seq-rows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.seq-row { display: flex; gap: 14px; align-items: flex-end; }
+.seq-row-num { font-family: var(--ui); font-size: 0.7rem; font-weight: 700; color: var(--ink-ghost); width: 26px; padding-bottom: 12px; flex: none; }
+.seq-row-remove { flex: none; background: none; border: 1px solid var(--rule); color: var(--ink-ghost); font-size: 0.7rem; padding: 10px 12px; cursor: pointer; transition: all 180ms var(--ease-out); }
+.seq-row-remove:hover { border-color: var(--danger); color: var(--danger); }
+.manual-result { margin-top: 20px; }
+.manual-chart-wrap { margin-top: 16px; background: var(--warm-white); border: 1px solid var(--rule); padding: 16px; }
+.episodes-wrap { margin-top: 4px; }
+.upload-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 32px 20px; border: 2px dashed var(--rule); background: var(--warm-white); cursor: pointer; transition: all 180ms var(--ease-out); }
+.upload-drop:hover, .upload-drop.drag-over { border-color: var(--gold); background: var(--gold-pale); }
+.upload-drop-title { font-family: var(--ui); font-size: 0.82rem; font-weight: 700; color: var(--ink); }
+.upload-drop-sub { font-family: var(--sans); font-size: 0.72rem; color: var(--ink-ghost); max-width: 50ch; }
+.upload-meta { margin-top: 12px; font-family: ui-monospace,monospace; font-size: 0.76rem; color: var(--ink-soft); background: var(--warm-white); border: 1px solid var(--rule); padding: 10px 14px; }
+.sample-files { margin-top: 20px; }
+.sample-files-label { font-family: var(--ui); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-ghost); margin-bottom: 10px; }
+.sample-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sample-chip { text-align: left; max-width: 220px; padding: 10px 14px; border: 1px solid var(--rule); background: #fff; cursor: pointer; transition: all 180ms var(--ease-out); }
+.sample-chip:hover { border-color: var(--gold); background: var(--gold-pale); }
+.sample-chip.active { border-color: var(--ink); background: var(--gold-pale); }
+.sample-chip.loading { opacity: 0.6; cursor: default; }
+.sample-chip-label { display: block; font-family: var(--ui); font-size: 0.72rem; font-weight: 700; color: var(--ink); }
+.sample-chip-desc { display: block; margin-top: 3px; font-family: var(--sans); font-size: 0.66rem; line-height: 1.4; color: var(--ink-ghost); }
+.chart-explainer { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-ghost); line-height: 1.55; margin-bottom: 10px; max-width: 72ch; }
+.chart-explainer-link { color: var(--gold-deep); font-weight: 600; text-decoration: underline; }
+.chart-explainer-link:hover { color: var(--gold-hover); }
+.hourly-wrap { margin-top: 20px; }
+.risk-note { font-family: var(--sans); font-size: 0.68rem; color: var(--ink-ghost); }
+.sim-controls { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+.sim-controls-label { font-family: var(--ui); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-ghost); margin-right: 2px; }
+.sim-speed-btn { font-family: ui-monospace,monospace; font-size: 0.72rem; font-weight: 700; padding: 6px 12px; border: 1px solid var(--rule); background: #fff; color: var(--ink-soft); cursor: pointer; transition: all 180ms var(--ease-out); }
+.sim-speed-btn:hover { border-color: var(--gold); }
+.sim-speed-btn.active { border-color: var(--ink); background: var(--ink); color: var(--gold); }
+.sim-feed { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 18px; }
+.sim-feed-step {
+  display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start;
+  padding: 12px 14px; border: 1px solid var(--rule); background: var(--warm-white);
+}
+.sim-feed-step.is-active { border-color: var(--gold); background: var(--gold-pale); }
+.sim-feed-step.is-danger { border-color: var(--danger); background: rgba(204,75,55,0.06); }
+.sim-feed-step.is-safe { border-color: var(--safe); background: rgba(46,139,71,0.06); }
+.sim-feed-step.is-warn { border-color: var(--warn); background: rgba(201,138,18,0.06); }
+.sim-step-num {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--ui); font-size: 0.72rem; font-weight: 800; background: var(--ink); color: #fff;
+}
+.sim-feed-step.is-danger .sim-step-num { background: var(--danger); }
+.sim-feed-step.is-safe .sim-step-num { background: var(--safe); }
+.sim-feed-step.is-warn .sim-step-num { background: var(--warn); }
+.sim-step-title { font-family: var(--ui); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-ghost); margin-bottom: 4px; }
+.sim-step-body { font-family: var(--sans); font-size: 0.86rem; color: var(--ink); line-height: 1.45; }
+.sim-step-body strong { font-weight: 700; }
+
+.sim-status { font-family: var(--ui); font-size: 0.74rem; font-style: italic; color: var(--gold-deep); background: var(--gold-pale); padding: 9px 13px; border-left: 3px solid var(--gold); margin-bottom: 14px; }
+.sim-callout { font-family: var(--ui); font-size: 0.86rem; padding: 14px 16px; border: 2px solid var(--ink); background: #fff; margin-bottom: 14px; }
+.sim-callout strong { font-weight: 800; }
+.sim-callout.danger { border-color: var(--danger); background: rgba(204,75,55,0.06); color: var(--danger); }
+.sim-callout.warn { border-color: var(--warn); background: rgba(201,138,18,0.06); color: var(--warn); }
+.sim-callout.safe { border-color: var(--safe); background: rgba(46,139,71,0.06); color: var(--safe); }
+.sim-running { font-family: var(--ui); font-size: 0.76rem; color: var(--ink-soft); padding: 8px 13px; background: var(--warm-white); border: 1px solid var(--rule); margin-bottom: 14px; }
+.sim-crash-flag { border-width: 2.5px; border-color: var(--danger); background: rgba(204,75,55,0.1); color: var(--danger); font-weight: 700; font-size: 0.92rem; }
+.sim-early-explainer { margin-top: 4px; }
+
+/* ============ HOWTO (matches .howto-grid exactly) ============ */
+.howto-section { background: var(--warm-white); border-bottom: 1px solid var(--rule); padding: clamp(48px,6vw,88px) clamp(20px,4vw,72px); }
+.howto-inner { max-width: 1400px; margin: 0 auto; }
+.section-header { text-align: center; margin-bottom: clamp(28px,3.5vw,48px); }
+.section-eyebrow { font-family: var(--ui); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 12px; }
+.section-h2 { font-family: var(--display); font-weight: 400; text-transform: uppercase; line-height: 0.9; font-size: clamp(2.1rem,3.6vw,3.2rem); color: var(--ink); }
+.section-h2 em { font-style: normal; color: var(--gold); }
+.howto-grid { list-style: none; display: grid; grid-template-columns: repeat(4,1fr); gap: clamp(20px,2.6vw,40px); }
+.howto-step { position: relative; padding-top: 18px; border-top: 2px solid var(--rule); transition: border-color 220ms var(--ease-out); }
+.howto-step:hover { border-top-color: var(--gold); }
+.howto-head { display: flex; align-items: center; gap: 11px; margin-bottom: 10px; }
+.howto-num { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--navy); color: var(--gold); font-family: var(--ui); font-size: 0.82rem; font-weight: 700; }
+.howto-title { font-family: var(--serif); font-size: 0.95rem; font-weight: 400; line-height: 1.2; color: var(--ink); letter-spacing: -0.005em; }
+.howto-desc { font-size: 0.82rem; line-height: 1.72; color: var(--ink-soft); }
+.howto-desc strong { color: var(--ink); font-weight: 600; }
+.howto-next-link { display: inline-flex; align-items: center; gap: 6px; margin-top: clamp(28px,3.5vw,44px); font-family: var(--ui); font-size: 0.85rem; font-weight: 700; color: var(--gold-deep); text-decoration: none; }
+.howto-next-link:hover { color: var(--gold-hover); text-decoration: underline; }
+@media (max-width: 1000px){ .howto-grid{grid-template-columns:repeat(2,1fr);} }
+
+/* ============ FIELD KIT / NEXT STEPS ============ */
+.fieldkit-section { background: var(--warm-white); border-bottom: 1px solid var(--rule); padding: clamp(48px,6vw,88px) clamp(20px,4vw,72px); }
+.fieldkit-inner { max-width: 1400px; margin: 0 auto; }
+.fieldkit-intro { font-family: var(--sans); font-size: 1rem; line-height: 1.7; color: var(--ink-soft); font-weight: 300; max-width: 72ch; margin: 18px auto 0; text-align: center; }
+.fieldkit-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: clamp(32px,4vw,48px); }
+.fieldkit-card { background: #fff; padding: clamp(24px,3vw,34px); }
+.fieldkit-cat { font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: 0.01em; font-size: clamp(1.7rem,2.6vw,2.3rem); color: var(--ink); line-height: 1; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 3px solid var(--gold); }
+.fieldkit-item { padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.fieldkit-item:last-child { border-bottom: none; padding-bottom: 0; }
+.fieldkit-item:first-of-type { padding-top: 0; }
+.fieldkit-item-name { font-family: var(--serif); font-size: 1.15rem; color: var(--ink); letter-spacing: -0.005em; margin-bottom: 5px; }
+.fieldkit-item-desc { font-family: var(--sans); font-size: 0.9rem; line-height: 1.6; color: var(--ink-soft); font-weight: 300; }
+.fieldkit-caveat { margin-top: clamp(28px,3.5vw,40px); padding: 18px 22px; background: #fff; border: 1px solid var(--rule); border-left: 3px solid var(--gold); font-family: var(--sans); font-size: 0.85rem; line-height: 1.7; color: var(--ink-soft); }
+.fieldkit-caveat strong { color: var(--ink); font-weight: 700; }
+@media (max-width: 900px) { .fieldkit-grid { grid-template-columns: 1fr; } }
+
+/* ============ ABOUT (real .about-section treatment, from 03-home-sections.css) ============ */
+.about-section { padding: clamp(64px,8vw,100px) clamp(20px,4vw,72px); border-bottom: 1px solid var(--rule); background: var(--paper); }
+.about-inner { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.about-media { position: relative; }
+.about-img-wrap { position: relative; overflow: hidden; border-radius: 4px; background: var(--navy); aspect-ratio: 2/3; max-width: 420px; }
+.about-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.about-caption { display: flex; flex-direction: column; gap: 3px; padding: 14px 2px 0; }
+.about-caption-name { font-family: var(--serif); font-size: 0.92rem; color: var(--ink); }
+.about-caption-role { font-family: var(--ui); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-deep); }
+.about-eyebrow { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.about-eyebrow::before { content: ""; width: 24px; height: 1px; background: var(--gold); }
+.about-h2 { font-family: var(--serif); font-size: clamp(1.8rem,3vw,2.8rem); color: var(--ink); line-height: 1.12; margin-bottom: 16px; }
+.about-lead { font-size: 1rem; color: var(--ink-soft); line-height: 1.75; font-weight: 300; margin-bottom: 20px; max-width: 52ch; }
+.about-mission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+.mission-card { padding: 16px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; transition: all 200ms var(--ease-out); cursor: default; }
+.mission-card:hover { border-color: var(--gold); box-shadow: 0 4px 16px rgba(196,146,10,0.12); transform: translateY(-2px); }
+.mission-card-icon { margin-bottom: 8px; }
+.mission-card-icon svg { width: 22px; height: 22px; color: var(--gold-deep); }
+.mission-card-title { font-size: 0.8rem; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.mission-card-desc { font-size: 0.7rem; color: var(--ink-ghost); line-height: 1.5; }
+.about-cta { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; background: none; color: var(--ink); font-family: var(--ui); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: 2px solid var(--ink); border-radius: 4px; cursor: pointer; text-decoration: none; transition: all 200ms var(--ease-out); }
+.about-cta:hover { background: var(--ink); color: var(--gold); border-color: var(--ink); transform: translateY(-2px); }
+.about-cta svg { width: 14px; height: 14px; }
+.partner-logos { display: flex; gap: 28px; align-items: center; margin-top: 22px; flex-wrap: wrap; }
+.partner-logos img { height: 32px; width: auto; opacity: 0.75; }
+@media (max-width: 1100px) { .about-inner { grid-template-columns: 1fr; gap: 32px; } .about-img-wrap { max-width: 300px; } }
+
+/* ============ FOOTER ============ */
+footer { background: var(--navy); border-top: 1px solid rgba(255,255,255,0.06); }
+.footer-top { max-width: 1400px; margin: 0 auto; padding: clamp(40px,5vw,60px) clamp(20px,4vw,72px); display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.footer-brand-name { font-family: var(--serif); font-size: 1.1rem; color: #fff; margin-bottom: 8px; letter-spacing: -0.005em; }
+.footer-brand-desc { font-size: 0.7rem; color: rgba(255,255,255,0.38); line-height: 1.7; max-width: 32ch; }
+.footer-col-title { font-family: var(--ui); font-size: 0.57rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 14px; }
+.footer-links { display: flex; flex-direction: column; gap: 7px; }
+.footer-links a { font-family: var(--sans); font-size: 0.7rem; color: rgba(255,255,255,0.38); text-decoration: none; transition: color 0.18s; }
+.footer-links a:hover { color: var(--gold); }
+.footer-bottom { max-width: 1400px; margin: 0 auto; padding: 18px clamp(20px,4vw,72px); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.footer-copy { font-family: var(--sans); font-size: 0.62rem; color: rgba(255,255,255,0.28); line-height: 1.6; }
+@media (max-width: 760px){ .footer-top{grid-template-columns:1fr 1fr;} }
+
+/* ============ responsive deck ============ */
+@media (max-width: 1150px) {
+  .deck { grid-template-columns: minmax(0,1fr); grid-template-areas: "stage" "rail-l" "rail-r" "band"; }
+  .deck-rail-l { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 14px; }
+  .deck-rail-l .rail-hd, .deck-rail-l .rail-facts { grid-column: 1/-1; }
+}
+@media (max-width: 1000px) { .deck-band { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 760px) {
+  .instrument-console { padding-left: 10px; padding-right: 10px; }
+  .stage { height: min(58vh,420px); }
+  .stage-readout-val { font-size: clamp(3.4rem,16vw,5rem); }
+  .deck { padding: 10px; border-radius: 16px; gap: 10px; }
+  .manual-row { flex-direction: column; }
+  .seq-row { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<header class="uapb-titlebar">
+  <!-- top black utility bar -->
+  <div class="tb-top">
+    <div class="tb-inner">
+      <button class="tb-findinfo" type="button">Find Info For&hellip; <span aria-hidden="true">&#9662;</span></button>
+      <nav class="tb-util" aria-label="Utility">
+        <a href="#about">Directory</a>
+        <a href="#news">News</a>
+        <a href="#tool-anchor">Events</a>
+        <a href="https://uapb.edu/administration/academic-affairs/center-for-teaching-learning/workday-student-info-hub/" target="_blank" rel="noopener">Workday Student Hub</a>
+      </nav>
+      <div class="tb-cta">
+        <a href="#" class="tb-give">Give</a>
+        <a href="#tool-anchor" class="tb-apply">Apply</a>
+        <div class="tb-search-wrap">
+          <button type="button" class="tb-search" aria-label="Search" aria-expanded="false" aria-controls="tbSearchInput" onclick="const el=this.closest('.tb-search-wrap');const open=el.classList.toggle('open');this.setAttribute('aria-expanded',open);if(open)el.querySelector('input').focus();">
+            <svg aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </button>
+          <input type="search" id="tbSearchInput" class="tb-search-input" placeholder="Search&hellip;" aria-label="Search the site">
+        </div>
+        <button type="button" class="tb-menu-btn" id="tbMenuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="tbMobileMenu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- mobile menu (opened by the hamburger; holds the nav + utility links) -->
+  <nav class="tb-mobile-menu" id="tbMobileMenu" aria-label="Menu" hidden>
+    <a href="#about">About</a>
+    <a href="#programs">Research</a>
+    <a href="#news">News</a>
+    <a href="mailto:ramenay@uapb.edu">Contact Us</a>
+    <div class="tb-mm-rule" aria-hidden="true"></div>
+    <a href="#about" class="tb-mm-util">Directory</a>
+    <a href="#news" class="tb-mm-util">News</a>
+    <a href="#tool-anchor" class="tb-mm-util">Events</a>
+    <a href="https://uapb.edu/administration/academic-affairs/center-for-teaching-learning/workday-student-info-hub/" target="_blank" rel="noopener" class="tb-mm-util">Workday Student Hub</a>
+  </nav>
+  <!-- gold nav bar -->
+  <div class="tb-goldbar">
+    <nav class="tb-nav" aria-label="Primary">
+      <a href="#about">About</a>
+      <a href="#programs">Research</a>
+      <a href="#news">News</a>
+      <a href="mailto:ramenay@uapb.edu">Contact Us</a>
+    </nav>
+  </div>
+  <!-- polygon (pennant) crest holding the UAPB logo -->
+  <a class="tb-crest" href="#" aria-label="AquaGuard — home">
+    <span class="tb-crest-in">
+      <span class="tb-crest-panel">
+        <img src="assets/UAPB-logo.png" alt="UAPB — AquaGuard">
+        <span class="tb-crest-tag">AquaGuard<br><span class="tb-crest-tag-sub">Fish Nutrigenomics &amp; AI Lab</span></span>
+      </span>
+    </span>
+  </a>
+  <!-- white strip under the nav — intentionally empty; it backs the crest -->
+  <div class="tb-roar" aria-hidden="true">
+    <span class="tb-roar-row"></span>
+  </div>
+</header>
+
+<section class="intro-av">
+  <div class="intro-av-inner">
+    <div class="intro-av-eyebrow">Predictive Water Quality — DO Crash Forecasting</div>
+    <h2 class="intro-av-h2">Catch a crash <em>six hours</em> early</h2>
+    <p class="intro-av-lead">AquaGuard uses an LSTM time-series model trained on real fishpond sensor data to forecast dissolved oxygen ahead of time — automatically triggering aeration and adjusting feed before conditions turn critical.</p>
+    <div class="intro-av-chips">
+      <span class="intro-av-chip"><span class="dot"></span>LSTM dissolved-oxygen forecast model</span>
+      <span class="intro-av-chip"><span class="dot"></span>Trained on Nile tilapia pond sensor data</span>
+      <span class="intro-av-chip"><span class="dot"></span>Species-aware safety thresholds</span>
+    </div>
+  </div>
+</section>
+
+<div class="ic-species-strip" id="tool">
+  <div class="species-pills">
+    <button class="sp-pill" data-species="catfish"><span>Ictalurus punctatus</span> — Catfish</button>
+    <button class="sp-pill" data-species="bass"><span>Micropterus salmoides</span> — Bass</button>
+    <button class="sp-pill active" data-species="tilapia"><span>Oreochromis niloticus</span> — Tilapia</button>
+  </div>
+</div>
+
+<section class="readout-section" id="tool-anchor">
+  <div class="readout-grid">
+
+    <div class="panel gauge-panel">
+      <div class="panel-title">Live Readout — Pond 1</div>
+      <div class="gauge-wrap">
+        <canvas id="gaugeCanvas" width="210" height="210"></canvas>
+        <div class="gauge-val idle" id="gaugeValue">0.0<span class="gauge-unit">mg/L</span></div>
+      </div>
+      <div class="gauge-label" id="gaugeLabel">Awaiting sensor data</div>
+      <div class="live-source" id="liveSource">No CSV / manual feed yet</div>
+
+      <div class="stat-row">
+        <div class="stat-box"><div class="num" id="predictedVal">0.0</div><div class="lbl">Predicted (+6h)</div></div>
+        <div class="stat-box"><div class="num" id="thresholdVal">5.0</div><div class="lbl">Critical (mg/L)</div></div>
+      </div>
+
+      <div class="hw-status">
+        <div class="hw-item">Aerator relay <span class="hw-state off" id="aeratorState">OFF</span></div>
+        <div class="hw-item">Feeder ration <span class="hw-state off" id="feederState">NORMAL</span></div>
+      </div>
+
+      <div class="controls">
+        <button class="btn-run" id="runBtn">▶ Run Live Forecast</button>
+        <button class="btn-reset" id="resetBtn">Reset</button>
+      </div>
+      <div class="banner idle" id="statusBanner">Idle — enter or upload sensor data to populate this readout</div>
+    </div>
+
+    <div class="panel manual-panel">
+      <div class="panel-title">Manual Sensor Entry — Crash Forecast</div>
+      <p class="manual-intro">Enter dissolved-oxygen readings, upload a CSV/XLSX, or pick a sample dataset. AquaGuard will simulate the feed into the live readout, forecast the next 6 hours, and switch the aerator relay when a crash is predicted.</p>
+
+      <div class="manual-tabs">
+        <button class="manual-tab active" data-mode="quick" type="button">Quick Reading</button>
+        <button class="manual-tab" data-mode="sequence" type="button">Hourly Sequence</button>
+        <button class="manual-tab" data-mode="upload" type="button">Upload File</button>
+      </div>
+
+      <div class="manual-mode" id="manualQuick">
+        <div class="manual-row">
+          <label>DO (mg/L)<input type="number" step="0.1" id="qDo" placeholder="e.g. 2.8"></label>
+          <label>Temp (°C)<input type="number" step="0.1" id="qTemp" placeholder="optional"></label>
+          <label>pH<input type="number" step="0.1" id="qPh" placeholder="optional"></label>
+        </div>
+      </div>
+
+      <div class="manual-mode" id="manualSequence" hidden>
+        <div class="manual-seq-rows" id="seqRows"></div>
+        <button class="btn-reset" id="addRowBtn" type="button">+ Add Hour</button>
+      </div>
+
+      <div class="manual-mode" id="manualUpload" hidden>
+        <label class="upload-drop" id="uploadDrop" for="uploadFile">
+          <span class="upload-drop-title" id="uploadFileName">Drop a CSV or XLSX file here, or click to browse</span>
+          <span class="upload-drop-sub">Needs a dissolved-oxygen column (any name). Timestamp, temperature and pH columns are auto-detected if present.</span>
+        </label>
+        <input type="file" id="uploadFile" accept=".csv,.xlsx,.xls" hidden>
+        <div class="upload-meta" id="uploadMeta" hidden></div>
+
+        <div class="sample-files">
+          <div class="sample-files-label">Or walk through one of these sample datasets:</div>
+          <div class="sample-chips" id="sampleChips"></div>
+          <div class="sim-controls" id="simControls" hidden>
+            <span class="sim-controls-label">Playback speed:</span>
+            <button type="button" class="sim-speed-btn active" data-speed="1">1x</button>
+            <button type="button" class="sim-speed-btn" data-speed="5">5x</button>
+            <button type="button" class="sim-speed-btn" data-speed="10">10x</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn-run" id="manualPredictBtn">▶ Predict From This Data</button>
+      </div>
+      <p class="chart-explainer" id="activeSpeciesHint" style="margin-top:10px;">Active species for thresholds: <strong>tilapia</strong> (critical 5.0 mg/L). Switch the pill above, then Predict again — or switch after a run to re-score the same forecast.</p>
+
+      <div class="manual-result" id="manualResult" hidden>
+        <div class="sim-feed" id="simFeed" hidden>
+          <div class="sim-feed-step is-active" id="simStep1">
+            <span class="sim-step-num">1</span>
+            <div>
+              <div class="sim-step-title">Playback</div>
+              <div class="sim-step-body" id="simStatus">Starting…</div>
+            </div>
+          </div>
+          <div class="sim-feed-step" id="simStep2" hidden>
+            <span class="sim-step-num">2</span>
+            <div>
+              <div class="sim-step-title">LSTM forecast decision</div>
+              <div class="sim-step-body" id="simDecision">Waiting for model…</div>
+            </div>
+          </div>
+          <div class="sim-feed-step" id="simStep3" hidden>
+            <span class="sim-step-num">3</span>
+            <div>
+              <div class="sim-step-title">Hardware action</div>
+              <div class="sim-step-body" id="simAction">Aerator OFF · Feeder NORMAL</div>
+            </div>
+          </div>
+          <div class="sim-feed-step" id="simStep4" hidden>
+            <span class="sim-step-num">4</span>
+            <div>
+              <div class="sim-step-title">Ground-truth check</div>
+              <div class="sim-step-body" id="verifyCallout">Runs after playback finishes.</div>
+            </div>
+          </div>
+        </div>
+        <div class="banner" id="manualBanner"></div>
+        <p class="chart-explainer" style="margin-top:16px;">Gray = sensor history. Gold = LSTM’s 6-hour forecast. <strong>Crash</strong> = a forecasted DO value below the species <em>critical</em> line (caution alone = watch, not crash). Step 4 compares that flag to when DO actually went critical in the file.</p>
+        <div class="manual-chart-wrap">
+          <canvas id="manualChart" height="90"></canvas>
+        </div>
+        <div class="hourly-wrap">
+          <p class="chart-explainer">Hour-by-hour LSTM forecast (not current DO thresholds). The mg/L range widens the further out the hour — later hours are less certain than the next one.</p>
+          <table class="ledger-tbl2">
+            <thead><tr><th>Hour</th><th>Predicted DO</th><th>Risk Level</th></tr></thead>
+            <tbody id="hourlyBody"></tbody>
+          </table>
+        </div>
+        <div class="episodes-wrap" id="episodesWrap" hidden>
+          <div class="panel-title" style="margin:16px 0 10px;">Actual Crash/Caution Episodes in This File (ground truth)</div>
+          <table class="ledger-tbl2">
+            <thead><tr><th>Start</th><th>End</th><th>Duration</th><th>Min DO</th><th>Status</th></tr></thead>
+            <tbody id="episodesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel ledger-panel">
+      <div class="panel-title">Decision Ledger</div>
+      <table class="ledger-tbl2">
+        <thead><tr><th>Time</th><th>Predicted DO (+6h)</th><th>Species Threshold</th><th>Status</th><th>Action Taken</th></tr></thead>
+        <tbody id="ledgerBody">
+          <tr><td colspan="5" style="color:var(--ink-ghost); text-align:center; padding:28px; font-family:var(--garamond); font-style:italic;">Enter a reading, upload a file, or run a sample simulation below to populate the decision ledger.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+<section class="howto-section" id="howto">
+  <div class="howto-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">The Pipeline</div>
+      <h2 class="section-h2">How <em>AquaGuard</em> Works</h2>
+    </div>
+    <ul class="howto-grid">
+      <li class="howto-step reveal d1">
+        <div class="howto-head"><span class="howto-num">1</span><h4 class="howto-title">Sense</h4></div>
+        <p class="howto-desc">Temperature, pH, and dissolved oxygen readings stream in from pond sensors via <strong>MQTT</strong> — or are entered manually for a what-if forecast.</p>
+      </li>
+      <li class="howto-step reveal d2">
+        <div class="howto-head"><span class="howto-num">2</span><h4 class="howto-title">Forecast</h4></div>
+        <p class="howto-desc">An <strong>LSTM</strong> time-series model predicts DO six hours ahead from the recent reading window (temperature and pH included when available).</p>
+      </li>
+      <li class="howto-step reveal d3">
+        <div class="howto-head"><span class="howto-num">3</span><h4 class="howto-title">Decide</h4></div>
+        <p class="howto-desc">Every one of the 6 forecasted hours is checked against <strong>species-specific thresholds</strong>, backed by published tolerance research.</p>
+      </li>
+      <li class="howto-step reveal d4">
+        <div class="howto-head"><span class="howto-num">4</span><h4 class="howto-title">Act</h4></div>
+        <p class="howto-desc">If a crash is predicted, a relay triggers the <strong>aerator</strong> and reduces feed automatically — before fish are at risk.</p>
+      </li>
+    </ul>
+    <a href="#field-kit" class="howto-next-link">See what it takes to connect this to a real pond →</a>
+  </div>
+</section>
+
+<section class="fieldkit-section" id="field-kit">
+  <div class="fieldkit-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Next Steps</div>
+      <h2 class="section-h2">What It Takes To Go <em>Live</em></h2>
+      <p class="fieldkit-intro">AquaGuard already forecasts a crash six hours out. This is what it takes to connect AquaGuard to a real pond — the hardware that closes the loop, real sensors feeding the model and real relays acting on what it decides.</p>
+    </div>
+
+    <div class="fieldkit-grid reveal">
+      <div class="fieldkit-card">
+        <div class="fieldkit-cat">Sensing</div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Dissolved Oxygen Probe</div>
+          <p class="fieldkit-item-desc">Feeds the model directly — this is the one reading AquaGuard actually forecasts.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Temperature Probe</div>
+          <p class="fieldkit-item-desc">Context only, logged alongside DO but not fed into the model.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">pH Probe</div>
+          <p class="fieldkit-item-desc">Context only, same role as the temperature probe.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Probe Cabling</div>
+          <p class="fieldkit-item-desc">Waterproof runs from each probe back to the enclosure.</p>
+        </div>
+      </div>
+
+      <div class="fieldkit-card">
+        <div class="fieldkit-cat">Compute &amp; Comms</div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">ESP32 Board</div>
+          <p class="fieldkit-item-desc">Reads the probes, publishes readings, and drives the relays.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">MQTT Broker Host</div>
+          <p class="fieldkit-item-desc">Mosquitto on a Raspberry Pi — shared across every pond, not a per-pond cost.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">WiFi Extender</div>
+          <p class="fieldkit-item-desc">Only needed if a pond sits outside the range of existing lab WiFi.</p>
+        </div>
+      </div>
+
+      <div class="fieldkit-card">
+        <div class="fieldkit-cat">Actuation</div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Relay Module</div>
+          <p class="fieldkit-item-desc">Switches aerator and feeder power from the ESP32's low-voltage signal.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Pond Aerator</div>
+          <p class="fieldkit-item-desc">Skip this if the pond already has one — AquaGuard just needs to control it.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Feeder Relay Interface</div>
+          <p class="fieldkit-item-desc">A signal line into the existing fish-feeder hardware — coordinate with that project rather than treating it as separate hardware.</p>
+        </div>
+      </div>
+
+      <div class="fieldkit-card">
+        <div class="fieldkit-cat">Power &amp; Enclosure</div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Waterproof Enclosure</div>
+          <p class="fieldkit-item-desc">Houses the ESP32 and relay board pondside.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Power Supply</div>
+          <p class="fieldkit-item-desc">Mains-fed where grid power reaches the pond.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Mounting Hardware</div>
+          <p class="fieldkit-item-desc">Cable glands, junction box, and a mounting float or pole.</p>
+        </div>
+        <div class="fieldkit-item">
+          <div class="fieldkit-item-name">Solar Panel + Battery</div>
+          <p class="fieldkit-item-desc">Optional — only for a pond with no grid power nearby.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="fieldkit-caveat reveal">
+      <strong>Reading this list:</strong> product names (DFRobot, Atlas Scientific, ESP32, Raspberry Pi) are representative model classes to search for, not vendor picks — confirm current availability before ordering. None of this is built yet; this is the plan for what real deployment requires.
+    </div>
+  </div>
+</section>
+
+<section class="about-section" id="about">
+  <div class="about-inner">
+    <div class="about-media reveal">
+      <div class="about-img-wrap">
+        <img class="about-img" src="assets/dr-ramena.png" alt="Dr. Yathish Ramena, Director of the Fish Nutrigenomics &amp; AI Lab" loading="lazy" decoding="async">
+      </div>
+      <div class="about-caption">
+        <span class="about-caption-name">Dr. Yathish Ramena</span>
+        <span class="about-caption-role">Director, Fish Nutrigenomics &amp; AI Lab</span>
+      </div>
+    </div>
+    <div class="about-text reveal d2">
+      <div class="about-eyebrow">About the Lab</div>
+      <h2 class="about-h2">Precision Science for <em>Aquaculture Communities</em></h2>
+      <p class="about-lead">AquaGuard extends the Fish Nutrigenomics &amp; AI Lab's work in AI-driven aquaculture — sitting alongside <strong>AquaVision</strong>, the lab's morphometric analysis instrument, as a second precision tool built for real pond deployment.</p>
+      <p class="about-lead" style="margin-top:-8px">Our mission is to give farmers early warning of dissolved-oxygen crashes hours before they happen, so aeration and feeding decisions can be made automatically — before fish are ever at risk.</p>
+      <div class="about-mission-grid">
+        <div class="mission-card">
+          <div class="mission-card-icon">
+            <svg aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="mission-card-title">Lab Mission Statement</div>
+          <div class="mission-card-desc">Advancing AI-powered aquaculture research for underserved communities</div>
+        </div>
+        <div class="mission-card">
+          <div class="mission-card-icon">
+            <svg aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          </div>
+          <div class="mission-card-title">Six Hours of Warning</div>
+          <div class="mission-card-desc">Forecasting dissolved oxygen ahead of time, not just alarming after the fact</div>
+        </div>
+      </div>
+      <a href="#programs" class="about-cta">
+        View Research Programs
+        <svg aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <div class="partner-logos">
+        <img src="assets/ara-logo.png" alt="Arkansas Research Alliance">
+        <img src="assets/gsla-logo.png" alt="Great Salt Lake Artemia">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="programs-section" id="programs">
+  <div class="programs-inner">
+    <div class="section-header reveal" style="text-align:left; margin-bottom:0;">
+      <div class="section-eyebrow">Focus Areas</div>
+      <h2 class="section-h2">Research <em>Programs</em></h2>
+    </div>
+    <div class="programs-grid reveal">
+      <div class="program-cell"><div class="prog-num">01</div><div class="prog-title">Shrimp Aquaculture</div><div class="prog-desc">Post-larvae detection, biomass estimation, and hatchery automation for L. vannamei and P. monodon.</div></div>
+      <div class="program-cell"><div class="prog-num">02</div><div class="prog-title">Freshwater Species</div><div class="prog-desc">AI models for Largemouth Bass and Giant River Prawn — growth tracking and feed optimization.</div></div>
+      <div class="program-cell"><div class="prog-num">03</div><div class="prog-title">Fish Nutrigenomics</div><div class="prog-desc">Nutrition-gene expression interactions to optimize species health at the molecular level.</div></div>
+      <div class="program-cell featured"><div class="prog-num">04</div><div class="prog-title">Precision Aquaculture</div><div class="prog-desc">IoT sensors, real-time monitoring, and predictive analytics for sustainable production.</div><span class="prog-tag">↳ This is AquaGuard</span></div>
+      <div class="program-cell"><div class="prog-num">05</div><div class="prog-title">Computer Vision</div><div class="prog-desc">Deep learning architectures for species detection, morphometric measurement, and screening.</div></div>
+      <div class="program-cell"><div class="prog-num">06</div><div class="prog-title">Food Security</div><div class="prog-desc">Accessible aquaculture intelligence for underserved farming communities across the Mid-South.</div></div>
+      <div class="program-cell"><div class="prog-num">07</div><div class="prog-title">Growth Modeling</div><div class="prog-desc">Mathematical models predicting growth trajectories and optimizing feeding strategies.</div></div>
+      <div class="program-cell"><div class="prog-num">08</div><div class="prog-title">Extension &amp; Outreach</div><div class="prog-desc">Technology transfer, workshops, and programs for the next generation of aquaculture professionals.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="news-section" id="news">
+  <div class="news-inner">
+    <div class="news-header reveal">
+      <div>
+        <div class="section-eyebrow">Latest from the Lab</div>
+        <h2 class="section-h2" style="font-size:clamp(1.6rem,2.6vw,2.2rem);">Read Our Latest News</h2>
+      </div>
+      <a href="https://fnai-website-1.onrender.com/#news" target="_blank" class="view-all">View All <span>→</span></a>
+    </div>
+    <div class="news-grid reveal">
+      <div class="news-card">
+        <div class="news-thumb"><div class="news-thumb-bg"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <div class="news-body">
+          <div class="news-tags"><span class="news-tag">Shrimp AI</span><span class="news-tag">Detection</span></div>
+          <div class="news-title">Automated post-larvae enumeration using deep learning in intensive shrimp hatcheries</div>
+          <div class="news-meta">Ramena Y. et al. · Aquaculture, 2025</div>
+        </div>
+      </div>
+      <div class="news-card">
+        <div class="news-thumb"><div class="news-thumb-bg"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="news-body">
+          <div class="news-tags"><span class="news-tag">Computer Vision</span><span class="news-tag">YOLOv8</span></div>
+          <div class="news-title">Morphometric estimation of aquaculture species via YOLOv8 with reference-object calibration</div>
+          <div class="news-meta">Ramena Y. et al. · Computers &amp; Electronics in Agriculture, 2024</div>
+        </div>
+      </div>
+      <div class="news-card">
+        <div class="news-thumb"><div class="news-thumb-bg"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="news-body">
+          <div class="news-tags"><span class="news-tag">Nutrigenomics</span><span class="news-tag">Bass</span></div>
+          <div class="news-title">Dietary gene expression profiling in Largemouth Bass under variable protein regimes</div>
+          <div class="news-meta">Ramena Y. et al. · Fish &amp; Shellfish Immunology, 2024</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand-name">Fish Nutrigenomics &amp; AI Lab</div>
+      <div class="footer-brand-desc">University of Arkansas at Pine Bluff · Department of Aquaculture &amp; Fisheries · Home of AquaVision and AquaGuard.</div>
+    </div>
+    <div>
+      <div class="footer-col-title">Tools</div>
+      <div class="footer-links">
+        <a href="https://fnai-website-1.onrender.com/" target="_blank">AquaVision Analysis Tool</a>
+        <a href="#tool-anchor">AquaGuard Forecast</a>
+        <a href="#field-kit">Next Steps: Field Kit</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Lab</div>
+      <div class="footer-links">
+        <a href="https://fnai-website-1.onrender.com/" target="_blank">Fish Nutrigenomics &amp; AI Lab</a>
+        <a href="https://uapb.edu" target="_blank">UAPB</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 Fish Nutrigenomics &amp; AI Lab · University of Arkansas at Pine Bluff</div>
+  </div>
+</footer>
+
+<script>
+const SPECIES = {
+  catfish: { caution: 5.0, critical: 3.0, label: "channel catfish" },
+  bass:    { caution: 6.0, critical: 3.0, label: "largemouth bass" },
+  tilapia: { caution: 6.0, critical: 5.0, label: "tilapia" }
+};
+let currentSpecies = "tilapia";
+let running = false;
+let pollTimer = null;
+let manualChart = null;
+let liveFeed = null; // latest manual/upload/sample payload driving the live readout
+let livePlaybackToken = 0;
+
+function getActiveSpecies() {
+  const pill = document.querySelector('.sp-pill.active');
+  return (pill && pill.dataset.species) || currentSpecies || "tilapia";
+}
+
+function evaluateCrash(forecast, species) {
+  const th = SPECIES[species] || SPECIES.tilapia;
+  const values = (forecast && forecast.values) || [];
+  let hours_until = null;
+  let predicted_value = null;
+  let status = "safe";
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v < th.critical) {
+      status = "danger";
+      hours_until = i + 1;
+      predicted_value = v;
+      break;
+    }
+    if (v < th.caution && status === "safe") {
+      status = "warn";
+      hours_until = i + 1;
+      predicted_value = v;
+    }
+  }
+  return { status, hours_until, predicted_value };
+}
+
+function applySpeciesToFeed(data, species) {
+  if (!data || !data.forecast) return data;
+  const next = { ...data, species, crash: evaluateCrash(data.forecast, species) };
+  return next;
+}
+
+// Draws a filled label pill directly on a threshold line's right edge,
+// e.g. "Critical — 3.0 mg/L", so the line reads on its own without a legend.
+const thresholdLabelPlugin = {
+  id: 'thresholdLabels',
+  afterDatasetsDraw(chartInstance, args, opts) {
+    const items = (opts && opts.items) || [];
+    if (!items.length) return;
+    const { ctx, chartArea, scales } = chartInstance;
+    ctx.save();
+    items.forEach(item => {
+      const y = scales.y.getPixelForValue(item.value);
+      if (y < chartArea.top - 2 || y > chartArea.bottom + 2) return;
+      const text = item.label;
+      ctx.font = '700 10px Archivo, "Open Sans", sans-serif';
+      const textWidth = ctx.measureText(text).width;
+      const padX = 7, boxH = 18;
+      const boxW = textWidth + padX * 2;
+      const x = chartArea.right - boxW - 2;
+      const yTop = Math.min(Math.max(y - boxH / 2, chartArea.top), chartArea.bottom - boxH);
+      const r = 3;
+      ctx.beginPath();
+      ctx.moveTo(x + r, yTop);
+      ctx.arcTo(x + boxW, yTop, x + boxW, yTop + boxH, r);
+      ctx.arcTo(x + boxW, yTop + boxH, x, yTop + boxH, r);
+      ctx.arcTo(x, yTop + boxH, x, yTop, r);
+      ctx.arcTo(x, yTop, x + boxW, yTop, r);
+      ctx.closePath();
+      ctx.fillStyle = item.color;
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + padX, yTop + boxH / 2 + 0.5);
+    });
+    ctx.restore();
+  }
+};
+
+// Marks exactly where on the timeline the real crash happens - a dashed
+// vertical line plus a bold red tag at the top, so "where" is answered by
+// looking at the chart instead of only reading a text callout below it.
+const crashMarkerPlugin = {
+  id: 'crashMarker',
+  afterDatasetsDraw(chartInstance, args, opts) {
+    if (!opts || opts.index == null) return;
+    const { ctx, chartArea, scales } = chartInstance;
+    const x = scales.x.getPixelForTick(opts.index);
+    if (x == null || x < chartArea.left - 1 || x > chartArea.right + 1) return;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(204,75,55,0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(x, chartArea.top); ctx.lineTo(x, chartArea.bottom); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const label = opts.label || 'CRASH';
+    ctx.font = '800 11px Archivo, sans-serif';
+    const textWidth = ctx.measureText(label).width;
+    const padX = 9, boxH = 22;
+    const boxW = textWidth + padX * 2;
+    const bx = Math.max(chartArea.left + 2, Math.min(x - boxW / 2, chartArea.right - boxW - 2));
+    const by = chartArea.top + 6;
+    const r = 3;
+    ctx.beginPath();
+    ctx.moveTo(bx + r, by);
+    ctx.arcTo(bx + boxW, by, bx + boxW, by + boxH, r);
+    ctx.arcTo(bx + boxW, by + boxH, bx, by + boxH, r);
+    ctx.arcTo(bx, by + boxH, bx, by, r);
+    ctx.arcTo(bx, by, bx + boxW, by, r);
+    ctx.closePath();
+    ctx.fillStyle = '#cc4b37';
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, bx + padX, by + boxH / 2 + 1);
+    ctx.restore();
+  }
+};
+
+function thresholdDatasets(th, length) {
+  return [
+    { label: 'Critical', data: Array(length).fill(th.critical),
+      borderColor: '#cc4b37', borderWidth: 2.5, borderDash: [6,4], pointRadius: 0, order: 0 },
+    { label: 'Caution', data: Array(length).fill(th.caution),
+      borderColor: '#c98a12', borderWidth: 2.5, borderDash: [6,4], pointRadius: 0, order: 0 },
+  ];
+}
+
+function thresholdLabelItems(th) {
+  return [
+    { value: th.critical, label: `Critical — ${th.critical.toFixed(1)} mg/L`, color: '#cc4b37' },
+    { value: th.caution, label: `Caution — ${th.caution.toFixed(1)} mg/L`, color: '#c98a12' },
+  ];
+}
+
+function drawGauge(value, max=10) {
+  const canvas = document.getElementById('gaugeCanvas');
+  const c = canvas.getContext('2d');
+  c.clearRect(0,0,210,210);
+  const cx=105, cy=105, r=85;
+  const start = Math.PI*0.75, end = Math.PI*2.25;
+  c.lineWidth = 13;
+  c.strokeStyle = 'rgba(24,24,24,0.08)';
+  c.beginPath(); c.arc(cx,cy,r,start,end); c.stroke();
+
+  const th = SPECIES[currentSpecies];
+  let color = '#2e8b47';
+  if (value < th.critical) color = '#cc4b37';
+  else if (value < th.caution) color = '#c98a12';
+
+  const frac = Math.min(value/max, 1);
+  const valEnd = start + (end-start)*frac;
+  c.strokeStyle = color;
+  c.beginPath(); c.arc(cx,cy,r,start,valEnd); c.stroke();
+}
+
+let gaugeAnimHandle = null;
+function animateGaugeTo(newValue) {
+  const el = document.getElementById('gaugeValue');
+  const startVal = parseFloat(el.textContent) || newValue;
+  if (gaugeAnimHandle) cancelAnimationFrame(gaugeAnimHandle);
+  const duration = 500;
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const val = startVal + (newValue - startVal) * eased;
+    el.innerHTML = val.toFixed(1) + '<span class="gauge-unit">mg/L</span>';
+    drawGauge(val);
+    gaugeAnimHandle = t < 1 ? requestAnimationFrame(step) : null;
+  }
+  gaugeAnimHandle = requestAnimationFrame(step);
+}
+
+function statusClass(val, th) {
+  if (val < th.critical) return "danger";
+  if (val < th.caution) return "warn";
+  return "safe";
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function setHardwareFromStatus(status) {
+  const aerator = document.getElementById('aeratorState');
+  const feeder = document.getElementById('feederState');
+  if (status === 'danger') {
+    aerator.className = 'hw-state on'; aerator.textContent = 'ON';
+    feeder.className = 'hw-state on'; feeder.textContent = 'REDUCED 50%';
+  } else if (status === 'warn') {
+    aerator.className = 'hw-state off'; aerator.textContent = 'STANDBY';
+    feeder.className = 'hw-state off'; feeder.textContent = 'NORMAL';
+  } else {
+    aerator.className = 'hw-state off'; aerator.textContent = 'OFF';
+    feeder.className = 'hw-state off'; feeder.textContent = 'NORMAL';
+  }
+}
+
+// Latch aerator ON on crash / critically low DO; release when DO is clearly recovering.
+let hwSmart = { relayOn: false, risingStreak: 0, lastDo: null };
+
+function resetSmartHardware() {
+  hwSmart = { relayOn: false, risingStreak: 0, lastDo: null };
+}
+
+function resetSimFeed(playbackMsg) {
+  const feed = document.getElementById('simFeed');
+  if (!feed) return;
+  feed.hidden = false;
+  const s1 = document.getElementById('simStep1');
+  const s2 = document.getElementById('simStep2');
+  const s3 = document.getElementById('simStep3');
+  const s4 = document.getElementById('simStep4');
+  s1.className = 'sim-feed-step is-active';
+  s2.className = 'sim-feed-step'; s2.hidden = true;
+  s3.className = 'sim-feed-step'; s3.hidden = true;
+  s4.className = 'sim-feed-step'; s4.hidden = true;
+  document.getElementById('simStatus').textContent = playbackMsg || 'Starting playback from hour 1…';
+  document.getElementById('simDecision').textContent = 'Waiting for LSTM forecast…';
+  document.getElementById('simAction').textContent = 'Aerator OFF · Feeder NORMAL';
+  document.getElementById('verifyCallout').textContent = 'Fills in after playback finishes.';
+}
+
+function setSimPlayback(text) {
+  const feed = document.getElementById('simFeed');
+  if (feed) feed.hidden = false;
+  document.getElementById('simStep1').classList.add('is-active');
+  document.getElementById('simStatus').textContent = text;
+}
+
+function setSimDecision(html, tone) {
+  const step = document.getElementById('simStep2');
+  step.hidden = false;
+  step.className = 'sim-feed-step' + (tone ? ` is-${tone}` : ' is-active');
+  document.getElementById('simDecision').innerHTML = html;
+}
+
+function setSimAction(html, tone) {
+  const step = document.getElementById('simStep3');
+  step.hidden = false;
+  step.className = 'sim-feed-step' + (tone ? ` is-${tone}` : '');
+  document.getElementById('simAction').innerHTML = html;
+}
+
+function setSimVerify(html, tone) {
+  const step = document.getElementById('simStep4');
+  step.hidden = false;
+  step.className = 'sim-feed-step' + (tone ? ` is-${tone}` : '');
+  document.getElementById('verifyCallout').innerHTML = html;
+}
+
+function updateSmartHardware({ currentDo, crashStatus }) {
+  const th = SPECIES[getActiveSpecies()];
+  const doVal = Number(currentDo);
+  if (!Number.isFinite(doVal)) {
+    setHardwareFromStatus(crashStatus || 'safe');
+    return hwSmart.relayOn;
+  }
+
+  if (hwSmart.lastDo != null) {
+    if (doVal > hwSmart.lastDo + 0.08) hwSmart.risingStreak += 1;
+    else if (doVal < hwSmart.lastDo - 0.08) hwSmart.risingStreak = 0;
+  }
+  hwSmart.lastDo = doVal;
+
+  const criticallyLow = doVal < th.critical;
+  const stillPredictedCrash = crashStatus === 'danger';
+  const shouldEngage = criticallyLow || stillPredictedCrash;
+
+  const recovering =
+    hwSmart.relayOn &&
+    !stillPredictedCrash &&
+    !criticallyLow &&
+    doVal >= th.caution &&
+    hwSmart.risingStreak >= 2;
+
+  if (shouldEngage) {
+    const wasOff = !hwSmart.relayOn;
+    hwSmart.relayOn = true;
+    setHardwareFromStatus('danger');
+    if (wasOff) {
+      setSimAction(
+        `<strong>Aerator relay ON</strong> · Feeder REDUCED 50% — triggered because LSTM forecast (or current DO) crossed critical (${th.critical} mg/L).`,
+        'danger'
+      );
+    }
+  } else if (recovering) {
+    hwSmart.relayOn = false;
+    hwSmart.risingStreak = 0;
+    setHardwareFromStatus('safe');
+    setSimAction(
+      `<strong>Recovery</strong> — DO ${doVal.toFixed(2)} mg/L and rising above caution (${th.caution}). <strong>Aerator OFF</strong> · Feeder NORMAL.`,
+      'safe'
+    );
+  } else if (hwSmart.relayOn) {
+    setHardwareFromStatus('danger');
+    setSimAction(`Aerator still <strong>ON</strong> · Feeder REDUCED — holding until DO recovers above ${th.caution} mg/L.`, 'danger');
+  } else if (crashStatus === 'warn' || doVal < th.caution) {
+    setHardwareFromStatus('warn');
+    setSimAction(`Aerator STANDBY · Feeder NORMAL — caution only (not a crash engage).`, 'warn');
+  } else {
+    setHardwareFromStatus('safe');
+    setSimAction(`Aerator OFF · Feeder NORMAL`, 'safe');
+  }
+  return hwSmart.relayOn;
+}
+
+function updateBanner(predicted, opts = {}) {
+  const th = SPECIES[currentSpecies];
+  const banner = document.getElementById('statusBanner');
+  const gaugeVal = document.getElementById('gaugeValue');
+  const gaugeLabel = document.getElementById('gaugeLabel');
+
+  if (predicted == null || Number.isNaN(predicted)) {
+    gaugeVal.className = 'gauge-val idle';
+    gaugeLabel.textContent = 'Awaiting sensor data';
+    banner.className = 'banner idle';
+    banner.textContent = 'Idle — enter or upload sensor data to populate this readout';
+    setHardwareFromStatus('safe');
+    return;
+  }
+
+  const cls = statusClass(predicted, th);
+  gaugeVal.className = 'gauge-val ' + cls;
+  const forceCrash = opts.forceCrash || cls === 'danger';
+
+  if (forceCrash || cls === 'danger') {
+    banner.className = 'banner danger';
+    banner.textContent = `Crash predicted for ${th.label} — aerator relay ON, feed reduced (${predicted.toFixed(2)} mg/L)`;
+    gaugeLabel.textContent = 'Dissolved oxygen — critical';
+    setHardwareFromStatus('danger');
+  } else if (cls === 'warn') {
+    banner.className = 'banner warn';
+    banner.textContent = `Watch — predicted DO trending down for ${th.label} (${predicted.toFixed(2)} mg/L)`;
+    gaugeLabel.textContent = 'Dissolved oxygen — caution';
+    setHardwareFromStatus('warn');
+  } else {
+    banner.className = 'banner safe';
+    banner.textContent = `Normal — predicted DO within safe range for ${th.label}`;
+    gaugeLabel.textContent = 'Dissolved oxygen — normal';
+    setHardwareFromStatus('safe');
+  }
+}
+
+function resetLiveReadout() {
+  liveFeed = null;
+  livePlaybackToken += 1;
+  running = false;
+  clearInterval(pollTimer);
+  resetSmartHardware();
+  document.getElementById('gaugeValue').innerHTML = '0.0<span class="gauge-unit">mg/L</span>';
+  document.getElementById('gaugeValue').className = 'gauge-val idle';
+  document.getElementById('predictedVal').textContent = '0.0';
+  document.getElementById('liveSource').textContent = 'No CSV / manual feed yet';
+  drawGauge(0);
+  updateBanner(null);
+  renderLedger([]);
+}
+
+function syncLiveReadout(data, sourceLabel) {
+  const species = getActiveSpecies();
+  currentSpecies = species;
+  data = applySpeciesToFeed(data, species);
+  liveFeed = data;
+  const readings = data.input_readings || [];
+  const lastDo = readings.length ? readings[readings.length - 1].do : (data.forecast?.values?.[0] ?? 0);
+  const pred = data.crash?.predicted_value != null
+    ? data.crash.predicted_value
+    : (data.forecast?.values?.[0] ?? 0);
+  animateGaugeTo(lastDo);
+  document.getElementById('predictedVal').textContent = Number(pred).toFixed(1);
+  document.getElementById('thresholdVal').textContent = SPECIES[species].critical.toFixed(1);
+  document.getElementById('liveSource').textContent = sourceLabel || (
+    data.filename ? `Feed: ${data.filename}` : 'Feed: manual sensor entry'
+  );
+  updateBanner(pred, { forceCrash: data.crash?.status === 'danger' });
+  updateSmartHardware({ currentDo: lastDo, crashStatus: data.crash?.status || 'safe' });
+}
+
+async function playLiveForecast(data) {
+  if (!data || !data.forecast) return;
+  const token = ++livePlaybackToken;
+  running = true;
+  const readings = data.input_readings || [];
+  const th = SPECIES[currentSpecies];
+  const source = data.filename ? `Playing ${data.filename}` : 'Playing manual sensor feed';
+  document.getElementById('liveSource').textContent = source;
+
+  // Walk actual readings into the gauge first
+  for (let i = 0; i < readings.length; i++) {
+    if (token !== livePlaybackToken) return;
+    const v = readings[i].do;
+    animateGaugeTo(v);
+    document.getElementById('predictedVal').textContent = '—';
+    document.getElementById('statusBanner').className = 'banner idle';
+    document.getElementById('statusBanner').textContent = `Live feed hour ${i + 1}/${readings.length} — DO ${v.toFixed(2)} mg/L`;
+    setHardwareFromStatus(statusClass(v, th));
+    await sleep(Math.max(180, 700 / Math.max(1, simSpeed)));
+  }
+
+  // Then advance through the 6-hour forecast
+  for (let i = 0; i < data.forecast.values.length; i++) {
+    if (token !== livePlaybackToken) return;
+    const v = data.forecast.values[i];
+    const cls = statusClass(v, th);
+    animateGaugeTo(v);
+    document.getElementById('predictedVal').textContent = v.toFixed(1);
+    updateBanner(v, { forceCrash: cls === 'danger' });
+    document.getElementById('liveSource').textContent = `Forecast +${i + 1}h`;
+    await sleep(Math.max(280, 900 / Math.max(1, simSpeed)));
+  }
+
+  // Settle on crash decision if any
+  if (token !== livePlaybackToken) return;
+  syncLiveReadout(data, data.filename ? `Feed: ${data.filename}` : 'Feed: manual sensor entry');
+  running = false;
+}
+
+const LEDGER_EMPTY_MSG = 'Enter a reading, upload a file, or run a sample simulation below to populate the decision ledger.';
+
+function renderLedger(entries) {
+  const tbody = document.getElementById('ledgerBody');
+  if (!entries || entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--ink-ghost); text-align:center; padding:28px; font-family:var(--garamond); font-style:italic;">${LEDGER_EMPTY_MSG}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = entries.map(e => `
+    <tr>
+      <td>${e.time}</td>
+      <td>${e.predicted.toFixed(2)} mg/L</td>
+      <td>${e.threshold.toFixed(1)} mg/L</td>
+      <td><span class="tag2 ${e.status}">${e.status.toUpperCase()}</span></td>
+      <td>${e.action}</td>
+    </tr>`).join('');
+}
+
+// Builds the ledger straight from the 6-hour forecast - the same per-hour
+// decisions already shown in the hourly table - so the ledger always
+// reflects exactly what the current simulation/reading predicted, hour by
+// hour, instead of a mix of leftover entries from unrelated past calls.
+function renderSimulationLedger(data) {
+  const th = SPECIES[currentSpecies];
+  const rows = data.forecast.times.map((t, i) => {
+    const v = data.forecast.values[i];
+    const status = v < th.critical ? 'danger' : (v < th.caution ? 'warn' : 'safe');
+    const action = status === 'danger' ? 'Aerator ON — Feed reduced 50%' : (status === 'warn' ? 'Monitoring' : 'No action');
+    return { time: t, predicted: v, threshold: th.critical, status, action };
+  });
+  renderLedger(rows);
+}
+
+document.querySelectorAll('.sp-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.sp-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentSpecies = pill.dataset.species;
+    const th = SPECIES[currentSpecies];
+    document.getElementById('thresholdVal').textContent = th.critical.toFixed(1);
+    const hint = document.getElementById('activeSpeciesHint');
+    if (hint) {
+      hint.innerHTML = `Active species for thresholds: <strong>${currentSpecies}</strong> (critical ${th.critical.toFixed(1)} mg/L). Switch the pill above, then Predict again — or switch after a run to re-score the same forecast.`;
+    }
+    if (liveFeed && liveFeed.forecast) {
+      const rescored = applySpeciesToFeed(liveFeed, currentSpecies);
+      liveFeed = rescored;
+      renderManualResult(rescored, document.getElementById('liveSource').textContent);
+    }
+  });
+});
+
+document.getElementById('runBtn').addEventListener('click', async () => {
+  if (running) return;
+  if (!liveFeed) {
+    alert('Live readout is empty. Enter a sequence, upload a CSV, or run a sample dataset first.');
+    return;
+  }
+  document.getElementById('runBtn').disabled = true;
+  try {
+    await playLiveForecast(liveFeed);
+  } finally {
+    document.getElementById('runBtn').disabled = false;
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  resetLiveReadout();
+});
+
+/* ============ Manual sensor entry ============ */
+function updatePredictButtonLabel() {
+  const mode = document.querySelector('.manual-tab.active').dataset.mode;
+  const btn = document.getElementById('manualPredictBtn');
+  btn.textContent = (mode === 'upload' && selectedSample) ? '▶ Start Sensor Simulation' : '▶ Predict From This Data';
+}
+
+document.querySelectorAll('.manual-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.manual-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const mode = tab.dataset.mode;
+    document.getElementById('manualQuick').hidden = mode !== 'quick';
+    document.getElementById('manualSequence').hidden = mode !== 'sequence';
+    document.getElementById('manualUpload').hidden = mode !== 'upload';
+    updatePredictButtonLabel();
+  });
+});
+
+/* ============ Upload File mode ============ */
+let uploadedFile = null;
+let selectedSample = null;
+const uploadDrop = document.getElementById('uploadDrop');
+const uploadInput = document.getElementById('uploadFile');
+
+function setUploadedFile(file) {
+  uploadedFile = file || null;
+  const nameEl = document.getElementById('uploadFileName');
+  const metaEl = document.getElementById('uploadMeta');
+  if (uploadedFile) {
+    selectedSample = null;
+    document.querySelectorAll('.sample-chip').forEach(c => c.classList.remove('active'));
+    document.getElementById('simControls').hidden = true;
+    nameEl.textContent = uploadedFile.name;
+    metaEl.hidden = true;
+  } else {
+    nameEl.textContent = 'Drop a CSV or XLSX file here, or click to browse';
+  }
+  updatePredictButtonLabel();
+}
+
+uploadInput.addEventListener('change', () => setUploadedFile(uploadInput.files[0]));
+['dragover', 'dragenter'].forEach(evt => uploadDrop.addEventListener(evt, e => {
+  e.preventDefault();
+  uploadDrop.classList.add('drag-over');
+}));
+['dragleave', 'drop'].forEach(evt => uploadDrop.addEventListener(evt, e => {
+  e.preventDefault();
+  uploadDrop.classList.remove('drag-over');
+}));
+uploadDrop.addEventListener('drop', e => {
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) { uploadInput.files = e.dataTransfer.files; setUploadedFile(file); }
+});
+
+/* ============ Sample dataset chips ============ */
+let simSpeed = 1;
+document.querySelectorAll('.sim-speed-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.sim-speed-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    simSpeed = parseFloat(b.dataset.speed);
+  });
+});
+
+async function loadSampleChips() {
+  const wrap = document.getElementById('sampleChips');
+  try {
+    const res = await fetch('/api/sample_files');
+    const samples = await res.json();
+    if (!samples.length) { wrap.innerHTML = '<span style="font-size:0.72rem; color:var(--ink-ghost);">No sample files found on the server.</span>'; return; }
+    wrap.innerHTML = samples.map(s => `
+      <button type="button" class="sample-chip" data-filename="${s.filename}">
+        <span class="sample-chip-label">${s.label}</span>
+        <span class="sample-chip-desc">${s.description}</span>
+      </button>`).join('');
+    wrap.querySelectorAll('.sample-chip').forEach(chip => {
+      chip.addEventListener('click', () => selectSampleChip(chip));
+    });
+  } catch (err) {
+    console.error('failed to load sample files', err);
+    wrap.innerHTML = '<span style="font-size:0.72rem; color:var(--ink-ghost);">Couldn\'t load sample files.</span>';
+  }
+}
+
+function selectSampleChip(chip) {
+  document.querySelectorAll('.sample-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  selectedSample = chip.dataset.filename;
+  uploadInput.value = '';
+  uploadedFile = null;
+  document.getElementById('uploadFileName').textContent = 'Drop a CSV or XLSX file here, or click to browse';
+  document.getElementById('uploadMeta').hidden = true;
+  document.getElementById('simControls').hidden = false;
+  updatePredictButtonLabel();
+}
+loadSampleChips();
+
+let seqRowCount = 0;
+function renumberSeqRows() {
+  document.querySelectorAll('#seqRows .seq-row').forEach((row, i) => {
+    row.querySelector('.seq-row-num').textContent = (i + 1) + 'h';
+  });
+  seqRowCount = document.querySelectorAll('#seqRows .seq-row').length;
+}
+function addSeqRow() {
+  seqRowCount++;
+  const div = document.createElement('div');
+  div.className = 'seq-row';
+  div.innerHTML = `
+    <span class="seq-row-num">${seqRowCount}h</span>
+    <label>DO (mg/L)<input type="number" step="0.1" class="seq-do" placeholder="required"></label>
+    <label>Temp (°C)<input type="number" step="0.1" class="seq-temp" placeholder="optional"></label>
+    <label>pH<input type="number" step="0.1" class="seq-ph" placeholder="optional"></label>
+    <button type="button" class="seq-row-remove" aria-label="Remove hour">✕</button>
+  `;
+  div.querySelector('.seq-row-remove').addEventListener('click', () => {
+    div.remove();
+    renumberSeqRows();
+  });
+  document.getElementById('seqRows').appendChild(div);
+}
+document.getElementById('addRowBtn').addEventListener('click', addSeqRow);
+addSeqRow(); addSeqRow(); addSeqRow();
+
+function renderEpisodes(episodes) {
+  const wrap = document.getElementById('episodesWrap');
+  if (!episodes) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  const tbody = document.getElementById('episodesBody');
+  if (episodes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--ink-ghost); text-align:center; padding:20px; font-family:var(--garamond); font-style:italic;">No caution/critical episodes found in this file for the selected species — every reading stayed in the safe range.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = episodes.map(e => `
+    <tr>
+      <td>${e.start}</td>
+      <td>${e.end}</td>
+      <td>${e.duration_hours}h</td>
+      <td>${e.min_do.toFixed(2)} mg/L</td>
+      <td><span class="tag2 ${e.status}">${e.status.toUpperCase()}</span></td>
+    </tr>`).join('');
+}
+
+function renderHourlyTable(data) {
+  const th = SPECIES[currentSpecies];
+  const tbody = document.getElementById('hourlyBody');
+  tbody.innerHTML = data.forecast.times.map((t, i) => {
+    const v = data.forecast.values[i];
+    const lower = data.forecast.lower[i];
+    const upper = data.forecast.upper[i];
+    const level = v < th.critical ? 'danger' : (v < th.caution ? 'warn' : 'safe');
+    const label = level === 'danger' ? 'Critical' : (level === 'warn' ? 'Caution' : 'Safe');
+    return `<tr>
+      <td>+${i + 1}h <span class="risk-note">(${t})</span></td>
+      <td>${v.toFixed(2)} mg/L <span class="risk-note">(${lower.toFixed(1)}–${upper.toFixed(1)} range)</span></td>
+      <td><span class="tag2 ${level}">${label.toUpperCase()}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderVerification(data) {
+  const th = SPECIES[getActiveSpecies()];
+  const episodes = data.episodes || [];
+  const readings = data.input_readings || [];
+
+  // Fair score: first hour DO actually crossed the critical line (not caution start)
+  const criticalIdx = readings.findIndex(r => Number(r.do) < th.critical);
+  const cautionIdx = readings.findIndex(r => Number(r.do) < th.caution);
+  const actualDanger = episodes.find(e => e.status === 'danger') || episodes[0] || null;
+
+  if (criticalIdx < 0 && !actualDanger) {
+    if (data.filename || (episodes && episodes.length === 0 && readings.length > 8)) {
+      setSimVerify(
+        `No actual critical DO (&lt; ${th.critical} mg/L) was found in this file for ${th.label}.`,
+        'safe'
+      );
+    }
+    return;
+  }
+
+  const criticalHour = criticalIdx >= 0 ? criticalIdx + 1 : null;
+  const cautionHour = cautionIdx >= 0 ? cautionIdx + 1 : null;
+  const flaggedHour = data._simFirstFlagHour || null;
+  const minDo = actualDanger ? actualDanger.min_do : Math.min(...readings.map(r => Number(r.do)));
+
+  let html = '';
+  if (actualDanger) {
+    html += `File episode ${actualDanger.start} → ${actualDanger.end}, min DO ${Number(minDo).toFixed(2)} mg/L. `;
+  }
+  if (cautionHour != null) {
+    html += `Caution began hour <strong>${cautionHour}</strong> (DO &lt; ${th.caution}). `;
+  }
+  if (criticalHour != null) {
+    html += `Critical began hour <strong>${criticalHour}</strong> (DO &lt; ${th.critical}). `;
+  }
+
+  let tone = 'warn';
+  if (flaggedHour != null && criticalHour != null) {
+    const lead = criticalHour - flaggedHour;
+    if (lead > 0) {
+      html += `LSTM flagged hour <strong>${flaggedHour}</strong> — <strong>${lead}h before</strong> critical. ✓ Early warning verified.`;
+      tone = 'safe';
+    } else if (lead === 0) {
+      html += `LSTM flagged hour <strong>${flaggedHour}</strong> — same hour critical began.`;
+    } else {
+      html += `LSTM flagged hour <strong>${flaggedHour}</strong> — ${Math.abs(lead)}h after critical began (late).`;
+    }
+  } else if (flaggedHour != null) {
+    html += `LSTM first predicted crash at hour <strong>${flaggedHour}</strong> during playback.`;
+    tone = 'danger';
+  } else {
+    html += `No mid-run crash flag — end-of-file forecast only.`;
+  }
+
+  setSimVerify(html, tone);
+}
+
+function renderManualResult(data, sourceLabel) {
+  const resultBox = document.getElementById('manualResult');
+  resultBox.hidden = false;
+  const banner = document.getElementById('manualBanner');
+  const species = getActiveSpecies();
+  currentSpecies = species;
+  data = applySpeciesToFeed(data, species);
+  const th = SPECIES[species];
+  const c = data.crash;
+  const flaggedHour = data._simFirstFlagHour;
+
+  if (flaggedHour != null) {
+    banner.className = 'banner danger banner-bold';
+    banner.innerHTML = `✓ <strong>Simulation complete</strong> — AquaGuard predicted a crash at hour ${flaggedHour} during playback (aerator engaged, then released on recovery). `
+      + `End-of-file forecast is now <strong>${c.status}</strong> because the pond has already recovered in the later readings.`;
+  } else if (c.status === 'danger') {
+    banner.className = 'banner danger banner-bold';
+    banner.innerHTML = `⚠ <strong>CRASH DETECTED</strong> — predicted for ${th.label} in ${c.hours_until}h (at ${Number(c.predicted_value).toFixed(2)} mg/L, below the ${th.critical} mg/L critical threshold). <strong>Aerator relay ON</strong> — feed reduced 50%.`;
+  } else if (c.status === 'warn') {
+    banner.className = 'banner warn banner-bold';
+    banner.innerHTML = `<strong>Watch</strong> — DO trends into the caution range for ${th.label} in ${c.hours_until}h (${Number(c.predicted_value).toFixed(2)} mg/L). Aerator on standby.`;
+  } else {
+    banner.className = 'banner safe';
+    banner.textContent = `No crash predicted for ${th.label} in the next 6 hours from this data`;
+  }
+
+  renderVerification(data);
+  renderEpisodes(data.episodes);
+  renderHourlyTable(data);
+  renderSimulationLedger(data);
+  syncLiveReadout(data, sourceLabel);
+
+  const n = data.input_readings.length;
+  const inLabels = data.input_readings.map((r, i) => i === n - 1 ? 'now' : `now-${n - 1 - i}h`);
+  const fLabels = data.forecast.times.map((_, i) => `+${i + 1}h`);
+  const labels = [...inLabels, ...fLabels];
+
+  // Mark first critical reading for ground-truth, not first caution
+  let crashIdx = data.input_readings.findIndex(r => Number(r.do) < th.critical);
+  if (crashIdx < 0 && data.episodes && data.episodes.length) {
+    crashIdx = data.input_readings.findIndex(r => r.time === data.episodes[0].start);
+  }
+
+  if (manualChart) manualChart.destroy();
+  const ctx = document.getElementById('manualChart').getContext('2d');
+  manualChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        ...thresholdDatasets(th, labels.length),
+        { label: 'Entered', data: [...data.input_readings.map(r => r.do), ...Array(data.forecast.values.length).fill(null)],
+          borderColor: '#8a8a8a', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#8a8a8a', tension: 0.25 },
+        { label: 'Forecast', data: [...Array(n).fill(null), ...data.forecast.values],
+          borderColor: '#efa522', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#efa522', tension: 0.25 },
+      ]
+    },
+    plugins: [thresholdLabelPlugin, crashMarkerPlugin],
+    options: {
+      responsive: true, animation: false,
+      plugins: {
+        legend: { display: true, labels: { color: '#575756', boxWidth: 10, font: { family: 'Open Sans', size: 10 } } },
+        thresholdLabels: { items: thresholdLabelItems(th) },
+        crashMarker: { index: crashIdx !== null && crashIdx >= 0 ? crashIdx : null, label: 'REAL CRASH HERE' }
+      },
+      scales: {
+        x: { ticks: { color: '#8a8a8a', font: { family: 'ui-monospace' } }, grid: { color: 'rgba(24,24,24,0.06)' } },
+        y: { min: 0, suggestedMax: 10, ticks: { color: '#8a8a8a', stepSize: 2, font: { family: 'ui-monospace' } }, grid: { color: 'rgba(24,24,24,0.06)' } }
+      }
+    }
+  });
+}
+
+async function fetchSamplePrediction(filename, species, cutoff) {
+  const body = { species, filename };
+  if (cutoff != null) body.cutoff = cutoff;
+  const res = await fetch('/api/predict_sample', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+function crashPhrase(crash, th) {
+  const pv = crash.predicted_value != null ? Number(crash.predicted_value).toFixed(2) : '—';
+  if (crash.status === 'danger') return `CRASH — DO falls to ${pv} mg/L in ${crash.hours_until}h (below the ${th.critical} mg/L critical threshold)`;
+  if (crash.status === 'warn') return `Caution — DO trends to ${pv} mg/L in ${crash.hours_until}h`;
+  return `Safe — no crash predicted in the next 6 hours`;
+}
+
+// Interpolated walk-forward playback: Chart.js's own animation system tweens
+// between two fixed states, which doesn't help when the dataset is growing
+// point-by-point every tick - it still reads as discrete jumps. Instead we
+// precompute SIM_SUBSTEPS linearly-interpolated points between every pair of
+// real hourly readings (the real values stay exact anchor points, only the
+// motion between them is invented) and reveal that denser array continuously
+// via requestAnimationFrame, redrawing with update('none') every frame -
+// smoother and more controllable than relying on Chart.js's tween engine for
+// continuous playback like this.
+const SIM_SUBSTEPS = 8;
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function buildDenseSeries(readings) {
+  const values = readings.map(r => r.do);
+  const total = values.length;
+  const dense = [];
+  const anchorDenseIdx = [];
+  for (let i = 0; i < total - 1; i++) {
+    anchorDenseIdx.push(dense.length);
+    for (let s = 0; s < SIM_SUBSTEPS; s++) dense.push(lerp(values[i], values[i + 1], s / SIM_SUBSTEPS));
+  }
+  anchorDenseIdx.push(dense.length);
+  dense.push(values[total - 1]);
+  return { dense, anchorDenseIdx };
+}
+
+function buildAnimatedManualChart(readings, th) {
+  if (manualChart) manualChart.destroy();
+  const total = readings.length;
+  const { dense, anchorDenseIdx } = buildDenseSeries(readings);
+  const labels = new Array(dense.length).fill('');
+  for (let i = 0; i < total; i++) labels[anchorDenseIdx[i]] = (i === total - 1) ? 'now' : `h${i + 1}`;
+
+  const ctx = document.getElementById('manualChart').getContext('2d');
+  manualChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        ...thresholdDatasets(th, dense.length),
+        { label: 'Entered', data: Array(dense.length).fill(null),
+          borderColor: '#8a8a8a', borderWidth: 2, pointRadius: 0, tension: 0 },
+      ]
+    },
+    plugins: [thresholdLabelPlugin, crashMarkerPlugin],
+    options: {
+      // Driven entirely by our own rAF loop below (new interpolated values
+      // every frame) - Chart.js's built-in animation would just add lag on
+      // top of motion that's already smooth, so it stays off for this chart.
+      responsive: true, animation: false,
+      plugins: {
+        legend: { display: true, labels: { color: '#575756', boxWidth: 10, font: { family: 'Open Sans', size: 10 } } },
+        thresholdLabels: { items: thresholdLabelItems(th) },
+        crashMarker: { index: null }
+      },
+      scales: {
+        x: { ticks: { color: '#8a8a8a', font: { family: 'ui-monospace' }, autoSkip: false, maxRotation: 0 }, grid: { color: 'rgba(24,24,24,0.06)' } },
+        y: { min: 0, suggestedMax: 10, ticks: { color: '#8a8a8a', stepSize: 2, font: { family: 'ui-monospace' } }, grid: { color: 'rgba(24,24,24,0.06)' } }
+      }
+    }
+  });
+  return { dense, anchorDenseIdx };
+}
+
+function revealDenseUpTo(denseIdx, dense) {
+  if (!manualChart) return;
+  const n = dense.length;
+  const clamped = Math.max(0, Math.min(Math.floor(denseIdx), n - 1));
+  const entered = manualChart.data.datasets[manualChart.data.datasets.length - 1];
+  const data = entered.data;
+  for (let i = 0; i <= clamped; i++) data[i] = dense[i];
+  for (let i = clamped + 1; i < n; i++) data[i] = null;
+  manualChart.update('none');
+}
+
+// Plays the dense series from denseIdx 0 to the end at a rate scaled by
+// simSpeed (real hours of playback per second). Fires each checkpoint's
+// callback the first time playback passes its real-hour index; checkpoint
+// work runs fire-and-forget so a slow network call never stalls the frame
+// loop (this was the main source of stutter in the old setInterval version,
+// which awaited each fetch before scheduling the next tick).
+function playDenseAnimation({ dense, anchorDenseIdx, startHour, checkpoints, simControl, hoursPerSecondAt1x = 2.2 }) {
+  return new Promise(resolve => {
+    const maxHour = anchorDenseIdx.length - 1; // 0-indexed hour of the last real reading
+    let lastTime = null;
+    let hourPos = startHour;
+    const fired = new Set();
+
+    function frame(now) {
+      if (lastTime === null) lastTime = now;
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      // Holds motion while a checkpoint pauses for an alert / callout beat.
+      if (simControl && (simControl.blocked || now < simControl.pauseUntil)) {
+        requestAnimationFrame(frame);
+        return;
+      }
+
+      hourPos = Math.min(maxHour, hourPos + dt * hoursPerSecondAt1x * simSpeed);
+      revealDenseUpTo(hourPos * SIM_SUBSTEPS, dense);
+
+      // Live gauge follows the smooth curve during playback
+      const denseIdx = Math.max(0, Math.min(Math.floor(hourPos * SIM_SUBSTEPS), dense.length - 1));
+      if (Number.isFinite(dense[denseIdx])) {
+        const g = document.getElementById('gaugeValue');
+        g.innerHTML = dense[denseIdx].toFixed(1) + '<span class="gauge-unit">mg/L</span>';
+        drawGauge(dense[denseIdx]);
+      }
+
+      checkpoints.forEach(cp => {
+        if (!fired.has(cp.hour) && hourPos >= cp.hour) {
+          fired.add(cp.hour);
+          cp.onReach(cp.hour);
+        }
+      });
+
+      if (hourPos >= maxHour) {
+        revealDenseUpTo(dense.length - 1, dense);
+        resolve();
+      } else {
+        requestAnimationFrame(frame);
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+function notifyCrashPredicted({ hour, total, crash, th, simControl, continueNote, currentDo }) {
+  // Latch ON (syncLiveReadout already ran smart logic; force engage here for the alert beat)
+  hwSmart.relayOn = true;
+  if (Number.isFinite(Number(currentDo))) hwSmart.lastDo = Number(currentDo);
+  setHardwareFromStatus('danger');
+  setSimDecision(
+    `<strong>CRASH PREDICTED</strong> at hour ${hour}${total ? ` / ${total}` : ''} — ${crashPhrase(crash, th)}. ` +
+    `This comes from the LSTM’s <em>forecasted</em> DO values falling below critical (${th.critical} mg/L), not from the caution line alone.`,
+    'danger'
+  );
+  setSimAction(
+    `<strong>Aerator relay ON</strong> · Feeder REDUCED 50%. ${continueNote || 'Playback continues; relay turns OFF when DO is rising and back above caution.'}`,
+    'danger'
+  );
+
+  if (simControl) {
+    simControl.blocked = true;
+    alert(
+      `CRASH PREDICTED\n\n` +
+      `${crashPhrase(crash, th)}\n\n` +
+      `Aerator relay: ON\nFeeder ration: REDUCED 50%\n\n` +
+      `Click OK to keep playing. The relay will turn OFF on its own when DO recovers and starts rising.`
+    );
+    simControl.blocked = false;
+    simControl.pauseUntil = performance.now() + 600;
+  }
+}
+
+async function runWalkForwardSimulation(filename) {
+  const btn = document.getElementById('manualPredictBtn');
+  const th = SPECIES[getActiveSpecies()];
+  currentSpecies = getActiveSpecies();
+  btn.disabled = true; btn.textContent = 'Simulating…';
+
+  document.getElementById('manualResult').hidden = false;
+  document.getElementById('manualBanner').className = 'banner';
+  document.getElementById('manualBanner').textContent = '';
+  document.getElementById('episodesWrap').hidden = true;
+  document.getElementById('hourlyBody').innerHTML = '';
+
+  resetSimFeed(`Simulating ${filename} from hour 1 at ${simSpeed}x — smooth playback like a live sensor feed.`);
+  resetSmartHardware();
+
+  const simControl = { pauseUntil: 0, blocked: false };
+
+  try {
+    const full = await fetchSamplePrediction(filename, getActiveSpecies(), null);
+    if (full.error) { alert(full.error); return; }
+
+    const allReadings = full.input_readings;
+    const total = full.total_rows || allReadings.length;
+
+    let crashIndex = null;
+    if (full.episodes && full.episodes.length) {
+      crashIndex = allReadings.findIndex(r => r.time === full.episodes[0].start);
+    }
+
+    const { dense, anchorDenseIdx } = buildAnimatedManualChart(allReadings, th);
+    revealDenseUpTo(0, dense); // start empty / first point — play from the beginning
+
+    setSimPlayback(`Hour 1 → ${total}. Walks forward; crash alert + hardware when LSTM first predicts critical.`);
+
+    let firstFlagCutoff = null;
+    const checkpoints = [];
+    const step = total <= 36 ? 1 : 2;
+    for (let h = 0; h < total; h += step) {
+      checkpoints.push({ hour: h, onReach: async (hour) => {
+        const cutoff = Math.max(1, hour + 1);
+        const stepResult = await fetchSamplePrediction(filename, getActiveSpecies(), cutoff);
+        if (stepResult.error) return;
+        const rescored = applySpeciesToFeed(stepResult, getActiveSpecies());
+        setSimPlayback(`Hour ${cutoff} / ${total}`);
+        setSimDecision(crashPhrase(rescored.crash, th), rescored.crash.status === 'danger' ? 'danger' : (rescored.crash.status === 'warn' ? 'warn' : 'safe'));
+        syncLiveReadout(rescored, `Feed: ${filename} — hour ${cutoff}/${total}`);
+
+        const wasFirstCrash = firstFlagCutoff === null && rescored.crash.status === 'danger';
+        const curDo = (rescored.input_readings && rescored.input_readings.length)
+          ? rescored.input_readings[rescored.input_readings.length - 1].do
+          : null;
+        if (wasFirstCrash) {
+          firstFlagCutoff = cutoff;
+          notifyCrashPredicted({
+            hour: cutoff,
+            total,
+            crash: rescored.crash,
+            th,
+            simControl,
+            currentDo: curDo,
+            continueNote: 'Continuing… relay stays ON until DO rises back above caution.',
+          });
+        }
+        // Hardware recovery/hold is handled inside syncLiveReadout → updateSmartHardware
+      }});
+    }
+    if (crashIndex !== null) {
+      checkpoints.push({ hour: crashIndex, onReach: () => {
+        if (manualChart) {
+          manualChart.options.plugins.crashMarker = { index: crashIndex * SIM_SUBSTEPS, label: 'REAL CRASH HERE' };
+          manualChart.update('none');
+        }
+        simControl.pauseUntil = performance.now() + 900;
+        if (firstFlagCutoff !== null && (crashIndex + 1) - firstFlagCutoff > 0) {
+          const lead = (crashIndex + 1) - firstFlagCutoff;
+          setSimVerify(
+            `✓ Verified — LSTM flagged hour ${firstFlagCutoff}, <strong>${lead}h before</strong> the real crash at hour ${crashIndex + 1}.`,
+            'safe'
+          );
+        } else {
+          setSimVerify(`Real DO crash marked at hour ${crashIndex + 1}.`, 'warn');
+        }
+      }});
+    }
+
+    await playDenseAnimation({
+      dense,
+      anchorDenseIdx,
+      startHour: 0,
+      checkpoints,
+      simControl,
+      hoursPerSecondAt1x: 2.0,
+    });
+
+    setSimPlayback(`Playback finished (${total} hours).`);
+
+    document.getElementById('uploadMeta').hidden = false;
+    document.getElementById('uploadMeta').textContent =
+      `${full.filename} — parsed ${full.rows_parsed} rows — DO column: "${full.columns_detected.do}"` +
+      (full.columns_detected.timestamp ? `, timestamp: "${full.columns_detected.timestamp}"` : ', no timestamp column found (synthesized hourly)');
+
+    const finalFeed = applySpeciesToFeed(full, getActiveSpecies());
+    finalFeed._simFirstFlagHour = firstFlagCutoff;
+    renderManualResult(finalFeed, `Feed: ${filename}`);
+  } catch (err) {
+    console.error('walk-forward simulation failed', err);
+    alert('Simulation failed — check the server console.');
+  } finally {
+    btn.disabled = false;
+    updatePredictButtonLabel();
+  }
+}
+
+async function fetchManualPrediction(readings) {
+  const species = getActiveSpecies();
+  currentSpecies = species;
+  const res = await fetch('/api/predict_manual', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ species, readings }),
+  });
+  return res.json();
+}
+
+async function fetchUploadPrediction(file, cutoff) {
+  const species = getActiveSpecies();
+  currentSpecies = species;
+  const form = new FormData();
+  form.append('species', species);
+  form.append('file', file);
+  if (cutoff != null) form.append('cutoff', String(cutoff));
+  const res = await fetch('/api/predict_upload', { method: 'POST', body: form });
+  return res.json();
+}
+
+async function runSequenceSimulation(readings) {
+  const btn = document.getElementById('manualPredictBtn');
+  const th = SPECIES[getActiveSpecies()];
+  currentSpecies = getActiveSpecies();
+  btn.disabled = true; btn.textContent = 'Simulating…';
+
+  document.getElementById('manualResult').hidden = false;
+  document.getElementById('simControls').hidden = false;
+  resetSimFeed(`Smooth playback of your ${readings.length}-hour sequence at ${simSpeed}x.`);
+  resetSmartHardware();
+
+  const simControl = { pauseUntil: 0, blocked: false };
+
+  try {
+    const { dense, anchorDenseIdx } = buildAnimatedManualChart(readings, th);
+    revealDenseUpTo(0, dense);
+
+    let firstFlag = null;
+    const checkpoints = [];
+    for (let h = 0; h < readings.length; h++) {
+      checkpoints.push({ hour: h, onReach: async (hour) => {
+        const step = await fetchManualPrediction(readings.slice(0, hour + 1));
+        if (step.error) return;
+        const rescored = applySpeciesToFeed(step, getActiveSpecies());
+        setSimPlayback(`Hour ${hour + 1} / ${readings.length}`);
+        setSimDecision(crashPhrase(rescored.crash, th), rescored.crash.status === 'danger' ? 'danger' : (rescored.crash.status === 'warn' ? 'warn' : 'safe'));
+        syncLiveReadout(rescored, `Manual sequence — hour ${hour + 1}/${readings.length}`);
+
+        if (firstFlag === null && rescored.crash.status === 'danger') {
+          firstFlag = hour + 1;
+          notifyCrashPredicted({
+            hour: hour + 1,
+            total: readings.length,
+            crash: rescored.crash,
+            th,
+            simControl,
+            currentDo: readings[hour].do,
+          });
+        }
+      }});
+    }
+
+    await playDenseAnimation({
+      dense,
+      anchorDenseIdx,
+      startHour: 0,
+      checkpoints,
+      simControl,
+      hoursPerSecondAt1x: 1.5,
+    });
+
+    const full = await fetchManualPrediction(readings);
+    if (full.error) { alert(full.error); return; }
+    setSimPlayback(`Playback finished (${readings.length} hours).`);
+    const rescored = applySpeciesToFeed(full, getActiveSpecies());
+    rescored._simFirstFlagHour = firstFlag;
+    renderManualResult(rescored, 'Feed: manual hourly sequence');
+  } catch (err) {
+    console.error('sequence simulation failed', err);
+    alert('Simulation failed — check the server console.');
+  } finally {
+    btn.disabled = false;
+    updatePredictButtonLabel();
+  }
+}
+
+async function runUploadWalkForward(file) {
+  const btn = document.getElementById('manualPredictBtn');
+  const th = SPECIES[getActiveSpecies()];
+  currentSpecies = getActiveSpecies();
+  btn.disabled = true; btn.textContent = 'Simulating…';
+
+  document.getElementById('manualResult').hidden = false;
+  document.getElementById('simControls').hidden = false;
+  resetSimFeed(`Smooth playback of ${file.name} from hour 1 at ${simSpeed}x.`);
+  resetSmartHardware();
+
+  const simControl = { pauseUntil: 0, blocked: false };
+
+  try {
+    const full = await fetchUploadPrediction(file, null);
+    if (full.error) { alert(full.error); return; }
+
+    const allReadings = full.input_readings;
+    const total = full.total_rows || allReadings.length;
+    let crashIndex = null;
+    if (full.episodes && full.episodes.length) {
+      crashIndex = allReadings.findIndex(r => r.time === full.episodes[0].start);
+    }
+
+    const { dense, anchorDenseIdx } = buildAnimatedManualChart(allReadings, th);
+    revealDenseUpTo(0, dense);
+
+    let firstFlagCutoff = null;
+    const checkpoints = [];
+    const step = total <= 36 ? 1 : 2;
+    for (let h = 0; h < Math.min(total, allReadings.length); h += step) {
+      checkpoints.push({ hour: h, onReach: async (hour) => {
+        const cutoff = Math.max(1, hour + 1);
+        const stepResult = await fetchUploadPrediction(file, cutoff);
+        if (stepResult.error) return;
+        const rescored = applySpeciesToFeed(stepResult, getActiveSpecies());
+        setSimPlayback(`Hour ${cutoff} / ${total}`);
+        setSimDecision(crashPhrase(rescored.crash, th), rescored.crash.status === 'danger' ? 'danger' : (rescored.crash.status === 'warn' ? 'warn' : 'safe'));
+        syncLiveReadout(rescored, `Feed: ${file.name} — hour ${cutoff}/${total}`);
+        const curDo = allReadings[Math.min(hour, allReadings.length - 1)].do;
+
+        if (firstFlagCutoff === null && rescored.crash.status === 'danger') {
+          firstFlagCutoff = cutoff;
+          notifyCrashPredicted({ hour: cutoff, total, crash: rescored.crash, th, simControl, currentDo: curDo });
+        }
+      }});
+    }
+    if (crashIndex !== null) {
+      checkpoints.push({ hour: crashIndex, onReach: () => {
+        if (manualChart) {
+          manualChart.options.plugins.crashMarker = { index: crashIndex * SIM_SUBSTEPS, label: 'REAL CRASH HERE' };
+          manualChart.update('none');
+        }
+        simControl.pauseUntil = performance.now() + 900;
+        if (firstFlagCutoff !== null && (crashIndex + 1) - firstFlagCutoff > 0) {
+          const lead = (crashIndex + 1) - firstFlagCutoff;
+          setSimVerify(
+            `✓ Verified — LSTM flagged hour ${firstFlagCutoff}, <strong>${lead}h before</strong> the real crash at hour ${crashIndex + 1}.`,
+            'safe'
+          );
+        } else {
+          setSimVerify(`Real DO crash marked at hour ${crashIndex + 1}.`, 'warn');
+        }
+      }});
+    }
+
+    await playDenseAnimation({
+      dense, anchorDenseIdx, startHour: 0, checkpoints, simControl, hoursPerSecondAt1x: 2.0,
+    });
+
+    setSimPlayback(`Playback finished (${total} hours).`);
+    document.getElementById('uploadMeta').hidden = false;
+    document.getElementById('uploadMeta').textContent =
+      `Parsed ${full.rows_parsed} rows — DO column: "${full.columns_detected.do}"` +
+      (full.columns_detected.timestamp ? `, timestamp: "${full.columns_detected.timestamp}"` : ', no timestamp column found (synthesized)');
+
+    const finalFeed = applySpeciesToFeed(full, getActiveSpecies());
+    finalFeed._simFirstFlagHour = firstFlagCutoff;
+    renderManualResult(finalFeed, `Feed: ${file.name}`);
+  } catch (err) {
+    console.error('upload simulation failed', err);
+    alert('Simulation failed — check the server console.');
+  } finally {
+    btn.disabled = false;
+    updatePredictButtonLabel();
+  }
+}
+
+async function runManualPredict() {
+  const mode = document.querySelector('.manual-tab.active').dataset.mode;
+  const btn = document.getElementById('manualPredictBtn');
+
+  if (mode === 'upload') {
+    if (selectedSample) {
+      await runWalkForwardSimulation(selectedSample);
+      return;
+    }
+    if (!uploadedFile) { alert('Choose a CSV or XLSX file, or pick a sample dataset below.'); return; }
+    document.getElementById('simControls').hidden = false;
+    await runUploadWalkForward(uploadedFile);
+    return;
+  }
+
+  let readings = [];
+  if (mode === 'quick') {
+    const doVal = parseFloat(document.getElementById('qDo').value);
+    if (isNaN(doVal)) { alert('Enter a DO reading.'); return; }
+    readings = [{
+      do: doVal,
+      temp: document.getElementById('qTemp').value !== '' ? parseFloat(document.getElementById('qTemp').value) : null,
+      ph: document.getElementById('qPh').value !== '' ? parseFloat(document.getElementById('qPh').value) : null,
+    }];
+  } else {
+    document.querySelectorAll('#seqRows .seq-row').forEach(row => {
+      const doVal = parseFloat(row.querySelector('.seq-do').value);
+      if (isNaN(doVal)) return;
+      readings.push({
+        do: doVal,
+        temp: row.querySelector('.seq-temp').value !== '' ? parseFloat(row.querySelector('.seq-temp').value) : null,
+        ph: row.querySelector('.seq-ph').value !== '' ? parseFloat(row.querySelector('.seq-ph').value) : null,
+      });
+    });
+    if (readings.length === 0) { alert('Enter at least one hourly DO reading.'); return; }
+  }
+
+  if (readings.length >= 2) {
+    await runSequenceSimulation(readings);
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Predicting…';
+  try {
+    const data = await fetchManualPrediction(readings);
+    if (data.error) { alert(data.error); return; }
+    renderManualResult(data, 'Feed: manual quick reading');
+    await playLiveForecast(data);
+  } catch (err) {
+    console.error('manual predict failed', err);
+    alert('Prediction failed — check the server console.');
+  } finally {
+    btn.disabled = false; btn.textContent = '▶ Predict From This Data';
+  }
+}
+document.getElementById('manualPredictBtn').addEventListener('click', runManualPredict);
+
+/* ============ Mobile hamburger menu (title bar) ============ */
+const mmBtn = document.getElementById('tbMenuBtn');
+const mm = document.getElementById('tbMobileMenu');
+if (mmBtn && mm) {
+  const setMM = open => {
+    mm.hidden = !open;
+    mmBtn.classList.toggle('open', open);
+    mmBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    mmBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  };
+  mmBtn.addEventListener('click', () => setMM(mm.hidden));
+  mm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMM(false)));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !mm.hidden) { setMM(false); mmBtn.focus(); } });
+  document.addEventListener('click', e => { if (!mm.hidden && !mm.contains(e.target) && !mmBtn.contains(e.target)) setMM(false); });
+}
+
+/* ============ Scroll reveals ============ */
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in-view'); revealObserver.unobserve(e.target); }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+resetLiveReadout();
+drawGauge(0);
+</script>
+
+</body>
+</html>
