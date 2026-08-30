@@ -183,6 +183,32 @@ def downsample_to_hourly(
 
 
 class DOForecastLSTM(nn.Module):
+    """Two heads share one LSTM backbone (single forward pass, not two trained
+    models): `head` predicts the full 6-hour/72-step trajectory as before,
+    and `head_1h` is a dedicated near-term output for the 1-hour-ahead value.
+
+    Why a dedicated head instead of just reading the first 12 steps of
+    `head`'s output: with a single 72-way MSE loss, gradient signal for the
+    near-term steps gets averaged in with 71 other steps, so nothing forces
+    the model to prioritize 1-hour accuracy specifically. `head_1h` gets its
+    own loss term in train_lstm.py, giving the near-term signal dedicated
+    gradient — this is what makes it an honestly higher-confidence signal
+    rather than just a relabeled slice of the same trajectory.
+
+    Tried and reverted: additive (Bahdanau-style) attention over the LSTM's
+    per-timestep outputs, meant to let the model weight less-recent parts of
+    the 8-hour lookback more heavily (aquaguard_research_backed_improvements_
+    prompt.md step 3, citing Yang/Liu/Gao 2023 and the IPSO-CNN-GRU-TAM
+    Eagle Mountain Lake study). Across 3 independent retrains on this ~900-row
+    dataset it measured WORSE than this dual-head-only version (MAE 0.577/
+    0.587/0.652, mean ~0.61) with higher run-to-run variance, versus this
+    version's tight 0.567/0.572 (mean ~0.57) on the same held-out window —
+    the extra attention parameters add capacity this small a dataset can't
+    reliably fit. Reverted per the project's own discipline: don't keep an
+    addition that measures worse. Revisit if the training set grows a lot
+    (more seasons/ponds) — the working attention code is in git history.
+    """
+
     def __init__(self, n_features: int = 3, hidden: int = 64, layers: int = 2, dropout: float = 0.1):
         super().__init__()
         self.lstm = nn.LSTM(
@@ -197,15 +223,21 @@ class DOForecastLSTM(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden, HORIZON_STEPS),
         )
+        self.head_1h = nn.Sequential(
+            nn.Linear(hidden, hidden // 2),
+            nn.ReLU(),
+            nn.Linear(hidden // 2, 1),
+        )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         # x: (batch, lookback, features) — feature 0 is scaled DO
         out, _ = self.lstm(x)
         last_h = out[:, -1, :]
         # Predict residual from the latest DO so short crash windows stay grounded
         deltas = self.head(last_h)
+        delta_1h = self.head_1h(last_h)
         last_do = x[:, -1, 0:1]
-        return last_do + deltas
+        return last_do + deltas, last_do + delta_1h
 
 
 class LSTMForecaster:
@@ -225,6 +257,10 @@ class LSTMForecaster:
         self.feature_std = np.asarray(self.meta["feature_std"], dtype=np.float32)
         self.feature_std = np.where(self.feature_std < 1e-6, 1.0, self.feature_std)
         self.residual_std = float(self.meta.get("residual_std", 0.35))
+        # Checkpoints trained before the dual-head change won't have this key or the
+        # head_1h.* weights — fall back gracefully instead of serving a garbage 1h value.
+        self.has_one_hour_head = "residual_std_1h" in self.meta
+        self.residual_std_1h = float(self.meta.get("residual_std_1h", self.residual_std))
         self.lookback = int(self.meta.get("lookback_steps", LOOKBACK_STEPS))
         self.device = torch.device("cpu")
 
@@ -234,7 +270,7 @@ class LSTMForecaster:
             layers=int(self.meta.get("layers", 2)),
         )
         state = torch.load(weights_path, map_location=self.device, weights_only=True)
-        self.model.load_state_dict(state)
+        self.model.load_state_dict(state, strict=self.has_one_hour_head)
         self.model.to(self.device)
         self.model.eval()
         self._lock = threading.Lock()
@@ -292,7 +328,9 @@ class LSTMForecaster:
         x, last_ts = self._prepare_window(frame, history_pad=history_pad)
         tensor = torch.from_numpy(x).unsqueeze(0).to(self.device)
         with self._lock:
-            pred = self.model(tensor).cpu().numpy()[0]
+            pred_full, pred_1h = self.model(tensor)
+            pred = pred_full.cpu().numpy()[0]
+            pred_1h_scaled = float(pred_1h.cpu().numpy()[0, 0])
 
         # predictions are in scaled DO space (feature 0); invert using DO mean/std
         do_mean = float(self.feature_mean[0])
@@ -311,7 +349,21 @@ class LSTMForecaster:
         step_numbers = np.arange(1, HORIZON_STEPS + 1, dtype=np.float32)
         band = band_floor * np.sqrt(step_numbers)
         lower = np.maximum(pred_do - band, 0.0)  # dissolved oxygen can't be negative
-        return downsample_to_hourly(future_times, pred_do, lower, pred_do + band)
+        result = downsample_to_hourly(future_times, pred_do, lower, pred_do + band)
+
+        if self.has_one_hour_head:
+            # Dedicated near-term signal (see DOForecastLSTM docstring) — its own
+            # band comes from its own validation residual, not a slice of the
+            # 6-hour trajectory's band, so it's honestly tighter, not just relabeled.
+            pred_1h_do = pred_1h_scaled * do_std + do_mean
+            band_1h = max(self.residual_std_1h, 0.15)
+            result["one_hour"] = {
+                "time": str(future_times[STEPS_PER_HOUR - 1]),
+                "value": pred_1h_do,
+                "lower": max(pred_1h_do - band_1h, 0.0),
+                "upper": pred_1h_do + band_1h,
+            }
+        return result
 
     def predict_series_bundle(
         self,

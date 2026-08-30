@@ -36,80 +36,16 @@ from lstm_forecast import (
     find_latest_model_dir,
     rows_to_feature_frame,
 )
-
-DATA_PATH = "data/aggregated_data.csv"
-
-
-def to_hourly_blocks(values: np.ndarray) -> np.ndarray:
-    """Average consecutive STEPS_PER_HOUR-sized blocks -> HOURLY_POINTS values."""
-    values = np.asarray(values, dtype=float)
-    assert len(values) == HORIZON_STEPS, f"expected {HORIZON_STEPS} steps, got {len(values)}"
-    return values.reshape(HOURLY_POINTS, STEPS_PER_HOUR).mean(axis=1)
-
-
-def directional_accuracy(anchor: float, actual_hourly: np.ndarray, pred_hourly: np.ndarray) -> float:
-    """Fraction of the 6 hourly steps where predicted direction (vs. the
-    previous point) matches the true direction. Ties (no real movement,
-    |delta| < 1e-6) are excluded from both numerator and denominator."""
-    actual_seq = np.concatenate([[anchor], actual_hourly])
-    pred_seq = np.concatenate([[anchor], pred_hourly])
-    correct, total = 0, 0
-    for i in range(1, len(actual_seq)):
-        true_delta = actual_seq[i] - actual_seq[i - 1]
-        pred_delta = pred_seq[i] - pred_seq[i - 1]
-        if abs(true_delta) < 1e-6:
-            continue
-        total += 1
-        if np.sign(true_delta) == np.sign(pred_delta):
-            correct += 1
-    return correct / total if total else float("nan")
-
-
-def find_contiguous_runs(frame: pd.DataFrame) -> list[tuple[int, int]]:
-    """(start, end) index pairs (inclusive) of runs with exact 5-min spacing.
-    This dataset has real sensor-downtime gaps (some 25-32 hours long) — a
-    'held-out window' spanning one of those gaps would compare an hour-4
-    prediction to a ground-truth reading from a day and a half later, which
-    is not a meaningful metric. We only score against a run with no gaps."""
-    deltas = frame["timestamp"].diff().dt.total_seconds()
-    gap_starts = deltas[deltas > STEP_MINUTES * 60].index.tolist()
-    bounds = [0] + gap_starts + [len(frame)]
-    return [(bounds[i], bounds[i + 1] - 1) for i in range(len(bounds) - 1)]
+from holdout import DATA_PATH, directional_accuracy, get_holdout_window, load_frame, to_hourly_blocks
 
 
 def main() -> None:
-    raw = pd.read_csv(DATA_PATH)
-    frame = rows_to_feature_frame(raw).dropna().drop_duplicates("timestamp").reset_index(drop=True)
-
-    split = int(len(frame) * 0.8)  # identical split point to train_lstm.py: nothing at or
-    # past this index was ever used as a training LABEL, so any target drawn from here on
-    # is genuinely held out for the LSTM. (Chronos/AutoGluon-bolt are zero-shot here, so
-    # they were never trained on this data at all.)
-
-    runs = find_contiguous_runs(frame)
-    target_run = next((r for r in runs if r[0] >= split and (r[1] - r[0] + 1) >= HORIZON_STEPS), None)
-    if target_run is None:
-        raise SystemExit("no gap-free run of HORIZON_STEPS length found after the split")
-    target = frame.iloc[target_run[0] : target_run[0] + HORIZON_STEPS].reset_index(drop=True)
-
-    # Context: real, contiguous history immediately before the *nearest* run of at
-    # least LOOKBACK_STEPS length that precedes the target. The dataset has small
-    # stub runs (5-6 rows) squeezed between multi-day gaps right before the target
-    # run; using those as-is would force the LSTM's 5-min grid resampler to
-    # interpolate clean-looking fake data across a >24h hole. Walking back to the
-    # last long enough real run avoids inventing history that never happened.
-    target_pos = runs.index(target_run)
-    context_run = next(
-        (r for r in reversed(runs[:target_pos]) if (r[1] - r[0] + 1) >= LOOKBACK_STEPS), None
-    )
-    if context_run is None:
-        raise SystemExit("no run of LOOKBACK_STEPS length found before the target run")
-    context = frame.iloc[: context_run[1] + 1].reset_index(drop=True)
-
-    window_start = str(target["timestamp"].iloc[0])
-    window_end = str(target["timestamp"].iloc[-1])
-    context_end_ts = context["timestamp"].iloc[-1]
-    real_gap_hours = (target["timestamp"].iloc[0] - context_end_ts).total_seconds() / 3600
+    frame = load_frame(DATA_PATH)
+    window = get_holdout_window(frame)
+    context, target = window["context"], window["target"]
+    split = window["split"]
+    window_start, window_end = window["window_start"], window["window_end"]
+    context_end_ts, real_gap_hours = window["context_end_ts"], window["real_gap_hours"]
 
     print(f"Target (ground truth, gap-free): {window_start} -> {window_end}  ({HORIZON_STEPS} x 5-min steps = 6h)")
     print(f"Context ends: {context_end_ts}  (last {LOOKBACK_STEPS} rows the LSTM actually sees are real & contiguous)")

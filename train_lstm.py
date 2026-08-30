@@ -22,6 +22,7 @@ from lstm_forecast import (
     FEATURE_COLS,
     HORIZON_STEPS,
     LOOKBACK_STEPS,
+    STEPS_PER_HOUR,
     DOForecastLSTM,
     rows_to_feature_frame,
 )
@@ -89,15 +90,23 @@ def train(args: argparse.Namespace) -> str:
     best_val = float("inf")
     best_state = None
     residual_std = 0.35
+    residual_std_1h = 0.35
+    best_residual_std = residual_std
+    best_residual_std_1h = residual_std_1h
 
     for epoch in range(1, args.epochs + 1):
         model.train()
         train_loss = 0.0
         for xb, yb in train_loader:
             xb, yb = xb.to(device), yb.to(device)
+            y_1h = yb[:, :STEPS_PER_HOUR].mean(dim=1, keepdim=True)
             opt.zero_grad()
-            pred = model(xb)
-            loss = loss_fn(pred, yb)
+            pred_full, pred_1h = model(xb)
+            # Multi-task loss: a dedicated head + loss term for the 1-hour value,
+            # not just a slice of the 72-step trajectory, so near-term accuracy
+            # gets its own gradient signal instead of being averaged away across
+            # 71 other steps (see DOForecastLSTM docstring in lstm_forecast.py).
+            loss = loss_fn(pred_full, yb) + loss_fn(pred_1h, y_1h)
             loss.backward()
             opt.step()
             train_loss += loss.item() * len(xb)
@@ -106,27 +115,38 @@ def train(args: argparse.Namespace) -> str:
         model.eval()
         val_loss = 0.0
         abs_err = []
+        abs_err_1h = []
         with torch.inference_mode():
             for xb, yb in val_loader:
                 xb, yb = xb.to(device), yb.to(device)
-                pred = model(xb)
-                loss = loss_fn(pred, yb)
+                y_1h = yb[:, :STEPS_PER_HOUR].mean(dim=1, keepdim=True)
+                pred_full, pred_1h = model(xb)
+                loss = loss_fn(pred_full, yb) + loss_fn(pred_1h, y_1h)
                 val_loss += loss.item() * len(xb)
                 # unscale DO channel for residual_std in mg/L
-                pred_do = pred.cpu().numpy() * feature_std[0] + feature_mean[0]
+                pred_do = pred_full.cpu().numpy() * feature_std[0] + feature_mean[0]
                 true_do = yb.cpu().numpy() * feature_std[0] + feature_mean[0]
                 abs_err.append(np.abs(pred_do - true_do).ravel())
+                pred_1h_do = pred_1h.cpu().numpy() * feature_std[0] + feature_mean[0]
+                true_1h_do = y_1h.cpu().numpy() * feature_std[0] + feature_mean[0]
+                abs_err_1h.append(np.abs(pred_1h_do - true_1h_do).ravel())
         val_loss /= max(len(val_ds), 1)
         if abs_err:
             residual_std = float(np.concatenate(abs_err).std())
+        if abs_err_1h:
+            residual_std_1h = float(np.concatenate(abs_err_1h).std())
 
-        print(f"epoch {epoch:02d}  train_mse={train_loss:.4f}  val_mse={val_loss:.4f}  residual_std={residual_std:.3f}")
+        print(f"epoch {epoch:02d}  train_mse={train_loss:.4f}  val_mse={val_loss:.4f}  "
+              f"residual_std={residual_std:.3f}  residual_std_1h={residual_std_1h:.3f}")
         if val_loss < best_val:
             best_val = val_loss
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            best_residual_std = residual_std
+            best_residual_std_1h = residual_std_1h
 
     if best_state is None:
         best_state = model.state_dict()
+    residual_std, residual_std_1h = best_residual_std, best_residual_std_1h
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join(args.out, f"lstm_{stamp}")
@@ -141,6 +161,7 @@ def train(args: argparse.Namespace) -> str:
         "hidden": args.hidden,
         "layers": args.layers,
         "residual_std": residual_std,
+        "residual_std_1h": residual_std_1h,
         "val_mse": best_val,
         "train_rows": int(split),
         "data_path": os.path.abspath(args.data),

@@ -19,9 +19,21 @@ app = Flask(__name__, static_folder=".")
 CORS(app)
 
 # ============================================================
-# Load the trained LSTM model once at startup
+# Load the trained LSTM model once at startup.
+# models/lstm/ is gitignored (regenerable via train_lstm.py) so a fresh clone
+# or deployment has nothing there — fall back to deploy_model/, a small
+# (~290KB) stable-named checkpoint that IS committed specifically so a
+# deployed instance has something to load without needing to retrain.
 # ============================================================
-MODEL_PATH = find_latest_model_dir("models/lstm")
+MODEL_PATH = None
+for _root in ("models/lstm", "deploy_model"):
+    try:
+        MODEL_PATH = find_latest_model_dir(_root)
+        break
+    except FileNotFoundError:
+        continue
+if MODEL_PATH is None:
+    raise RuntimeError("No trained LSTM checkpoint in models/lstm or deploy_model — run train_lstm.py first")
 predictor = LSTMForecaster(MODEL_PATH)
 print(f"Loaded LSTM model from {MODEL_PATH}")
 
@@ -55,6 +67,7 @@ def predict_with_retry(frame, history_pad=None, retries=2):
 # ============================================================
 HISTORY_CANDIDATES = [
     os.path.join("models", "lstm", "history_aggregated.csv"),
+    os.path.join("deploy_model", "history_aggregated.csv"),
     os.environ.get("AQUAGUARD_DATA_PATH", os.path.join("data", "aggregated_data.csv")),
     "Data_Model_IoTMLCQ_2024.xlsx",
 ]
@@ -216,6 +229,16 @@ def run_do_forecast(manual_rows, species, source, log_to_ledger=True):
     else:
         action = "No action"
 
+    # The 1-hour head is a dedicated, higher-confidence near-term signal (see
+    # DOForecastLSTM in lstm_forecast.py) — used to CONFIRM a 6-hour crash
+    # warning before the full aerator/feed response fires, not to replace the
+    # 6-hour early-warning value. If the 6h trajectory says danger but the
+    # confident near-term read doesn't yet show it, hold at standby instead of
+    # firing the full action immediately; the 6h warning itself stays visible.
+    one_hour = forecast.get("one_hour")
+    if status == "danger" and one_hour is not None and one_hour["value"] >= th["caution"]:
+        action = "Standby - 6h warning active, 1h signal not yet confirming (monitor closely)"
+
     entry = {
         "time": forecast_times[(hours_until - 1) if hours_until else 0],
         "predicted": round(crash_value if crash_value is not None else forecast_values[0], 2),
@@ -230,6 +253,8 @@ def run_do_forecast(manual_rows, species, source, log_to_ledger=True):
         del ledger[8:]
 
     forecast_out = {"times": forecast_times, "values": forecast_values, "lower": lower, "upper": upper}
+    if one_hour is not None:
+        forecast_out["one_hour"] = one_hour
     crash_out = {
         "status": status,
         "hours_until": hours_until,
@@ -474,4 +499,11 @@ if __name__ == "__main__":
     # NEVER let this default to True in a shared/production environment — Flask's
     # debug mode exposes an interactive Python debugger console over HTTP.
     # Set FLASK_DEBUG=1 in your local dev environment to turn it on.
-    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1", port=5000, use_reloader=False)
+    # host 0.0.0.0 + $PORT: required for hosting platforms (Render, Railway, etc.)
+    # that assign the listen port via env var and proxy from outside the container.
+    app.run(
+        debug=os.environ.get("FLASK_DEBUG", "0") == "1",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        use_reloader=False,
+    )

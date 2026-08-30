@@ -691,7 +691,8 @@ footer { background: var(--navy); border-top: 1px solid rgba(255,255,255,0.06); 
           </div>
         </div>
         <div class="banner" id="manualBanner"></div>
-        <p class="chart-explainer" style="margin-top:16px;">Gray = sensor history. Gold = LSTM’s 6-hour forecast. <strong>Crash</strong> = a forecasted DO value below the species <em>critical</em> line (caution alone = watch, not crash). Step 4 compares that flag to when DO actually went critical in the file.</p>
+        <p class="chart-explainer" id="oneHourCallout" style="margin-top:8px;" hidden></p>
+        <p class="chart-explainer" style="margin-top:16px;">Gray = sensor history. Gold = LSTM’s 6-hour forecast. <strong>Crash</strong> = a forecasted DO value below the species <em>critical</em> line (caution alone = watch, not crash). Step 4 compares that flag to when DO actually went critical in the file. The 1-hour line below is a separate, dedicated near-term prediction (tighter range) used to confirm a 6-hour warning before the full aerator response — it doesn't replace the 6-hour early-warning signal.</p>
         <div class="manual-chart-wrap">
           <canvas id="manualChart" height="90"></canvas>
         </div>
@@ -1689,6 +1690,23 @@ function renderVerification(data) {
   setSimVerify(html, tone);
 }
 
+function renderOneHourCallout(data, th, c) {
+  const el = document.getElementById('oneHourCallout');
+  const oneHour = data.forecast && data.forecast.one_hour;
+  if (!oneHour) { el.hidden = true; return; }
+  el.hidden = false;
+  const v = oneHour.value;
+  const range = `${oneHour.lower.toFixed(1)}–${oneHour.upper.toFixed(1)} mg/L`;
+  const confirms = v < th.caution;
+  if (c.status === 'danger' && !confirms) {
+    el.innerHTML = `<strong>1-hour check:</strong> ${v.toFixed(2)} mg/L (${range}) — still above the caution line, so the near-term signal isn't confirming the 6-hour warning yet. Holding at standby, monitoring closely.`;
+  } else if (c.status === 'danger' && confirms) {
+    el.innerHTML = `<strong>1-hour check:</strong> ${v.toFixed(2)} mg/L (${range}) — confirms the 6-hour warning is already showing up near-term.`;
+  } else {
+    el.innerHTML = `<strong>1-hour check:</strong> ${v.toFixed(2)} mg/L (${range}) — near-term signal, tighter range than the 6-hour forecast.`;
+  }
+}
+
 function renderManualResult(data, sourceLabel) {
   const resultBox = document.getElementById('manualResult');
   resultBox.hidden = false;
@@ -1715,6 +1733,7 @@ function renderManualResult(data, sourceLabel) {
     banner.textContent = `No crash predicted for ${th.label} in the next 6 hours from this data`;
   }
 
+  renderOneHourCallout(data, th, c);
   renderVerification(data);
   renderEpisodes(data.episodes);
   renderHourlyTable(data);

@@ -8,11 +8,17 @@ models/
 AutogluonModels/
 *.pt
 *.pth
+# EXCEPT deploy_model/ - a small (~290KB), stable-named checkpoint committed on
+# purpose so a fresh clone/deployment (Render, etc.) has a model to load without
+# retraining. See the comment above MODEL_PATH in app.py.
+!deploy_model/**
+!deploy_model/**/*.pt
 
 # datasets (large, or not yours to redistribute - check dataset licenses)
 *.xlsx
 *.csv
 !sample_data/*.csv
+!deploy_model/*.csv
 
 # local-only files
 .env

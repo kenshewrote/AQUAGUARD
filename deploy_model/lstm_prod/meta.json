@@ -1,0 +1,27 @@
+{
+  "feature_cols": [
+    "do_mean",
+    "temp_mean",
+    "ph_mean"
+  ],
+  "feature_mean": [
+    7.955368995666504,
+    26.267803192138672,
+    7.905327796936035
+  ],
+  "feature_std": [
+    1.0957989692687988,
+    1.9750765562057495,
+    0.46878257393836975
+  ],
+  "lookback_steps": 96,
+  "horizon_steps": 72,
+  "hidden": 64,
+  "layers": 2,
+  "residual_std": 1.081528663635254,
+  "residual_std_1h": 0.44313105940818787,
+  "val_mse": 2.650181674082345,
+  "train_rows": 717,
+  "data_path": "C:\\Users\\Kenny\\Desktop\\IOT_fish_feeder_project - Copy\\predictive_wq\\data\\aggregated_data.csv",
+  "created_utc": "20260830_225406"
+}
