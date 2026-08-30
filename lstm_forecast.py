@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import os
 import threading
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -364,26 +363,6 @@ class LSTMForecaster:
                 "upper": pred_1h_do + band_1h,
             }
         return result
-
-    def predict_series_bundle(
-        self,
-        history: pd.DataFrame,
-        lookback_hours: int = 72,
-    ) -> dict[str, Any]:
-        """Build /api/series payload: hourly actuals + hourly forecast."""
-        hist = rows_to_feature_frame(history)
-        # chart actuals at hourly resolution for readability
-        hist_idx = hist.set_index("timestamp").sort_index()
-        hourly = hist_idx[FEATURE_COLS].resample("1h").mean().dropna(subset=["do_mean"])
-        recent_hourly = hourly.tail(lookback_hours)
-        actual_times = [str(t) for t in recent_hourly.index]
-        actual_values = recent_hourly["do_mean"].astype(float).tolist()
-
-        forecast = self.predict_frame(hist)
-        return {
-            "actual": {"times": actual_times, "values": actual_values},
-            "forecast": forecast,
-        }
 
 
 def find_latest_model_dir(root: str = "models/lstm") -> str:

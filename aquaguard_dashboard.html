@@ -647,6 +647,8 @@ footer { background: var(--navy); border-top: 1px solid rgba(255,255,255,0.06); 
           <div class="sample-chips" id="sampleChips"></div>
           <div class="sim-controls" id="simControls" hidden>
             <span class="sim-controls-label">Playback speed:</span>
+            <button type="button" class="sim-speed-btn" data-speed="0.25">0.25x</button>
+            <button type="button" class="sim-speed-btn" data-speed="0.5">0.5x</button>
             <button type="button" class="sim-speed-btn active" data-speed="1">1x</button>
             <button type="button" class="sim-speed-btn" data-speed="5">5x</button>
             <button type="button" class="sim-speed-btn" data-speed="10">10x</button>
@@ -1926,14 +1928,22 @@ function playDenseAnimation({ dense, anchorDenseIdx, startHour, checkpoints, sim
   });
 }
 
-function notifyCrashPredicted({ hour, total, crash, th, simControl, continueNote, currentDo }) {
-  // Latch ON (syncLiveReadout already ran smart logic; force engage here for the alert beat)
+function notifyCrashPredicted({ hour, total, crash, th, simControl, continueNote, currentDo, oneHour }) {
+  // This fires off the 6-hour forecast crossing critical (crash.hours_until can be
+  // anywhere from 1-6h out) — that's the genuine advance-warning lead time, verified
+  // against the real crash marker later in playback. The 1-hour head is reported
+  // alongside it as an honest "how does the near-term signal read right now" data
+  // point, not as what decides whether to fire — that signal is grounded close to
+  // the current reading, so gating on it would erase most of the lead time.
   hwSmart.relayOn = true;
   if (Number.isFinite(Number(currentDo))) hwSmart.lastDo = Number(currentDo);
   setHardwareFromStatus('danger');
+  const oneHourLine = oneHour
+    ? `1-hour near-term signal right now: ${oneHour.value.toFixed(2)} mg/L (${oneHour.value < th.critical ? 'already confirms it' : 'not there yet — still ahead of the near-term window'}).`
+    : '';
   setSimDecision(
-    `<strong>CRASH PREDICTED</strong> at hour ${hour}${total ? ` / ${total}` : ''} — ${crashPhrase(crash, th)}. ` +
-    `This comes from the LSTM’s <em>forecasted</em> DO values falling below critical (${th.critical} mg/L), not from the caution line alone.`,
+    `<strong>CRASH PREDICTED</strong> — ${crashPhrase(crash, th)}. ${oneHourLine} ` +
+    `This comes from the LSTM's <em>forecasted</em> DO values falling below critical (${th.critical} mg/L), not from the caution line alone.`,
     'danger'
   );
   setSimAction(
@@ -1944,8 +1954,9 @@ function notifyCrashPredicted({ hour, total, crash, th, simControl, continueNote
   if (simControl) {
     simControl.blocked = true;
     alert(
-      `CRASH PREDICTED\n\n` +
-      `${crashPhrase(crash, th)}\n\n` +
+      `⚠ CRASH PREDICTED — before it happens\n\n` +
+      `${crashPhrase(crash, th)}\n` +
+      (oneHourLine ? `${oneHourLine}\n\n` : '\n') +
       `Aerator relay: ON\nFeeder ration: REDUCED 50%\n\n` +
       `Click OK to keep playing. The relay will turn OFF on its own when DO recovers and starts rising.`
     );
@@ -2014,6 +2025,7 @@ async function runWalkForwardSimulation(filename) {
             th,
             simControl,
             currentDo: curDo,
+            oneHour: rescored.forecast.one_hour,
             continueNote: 'Continuing… relay stays ON until DO rises back above caution.',
           });
         }
@@ -2126,6 +2138,7 @@ async function runSequenceSimulation(readings) {
             th,
             simControl,
             currentDo: readings[hour].do,
+            oneHour: rescored.forecast.one_hour,
           });
         }
       }});
@@ -2198,7 +2211,7 @@ async function runUploadWalkForward(file) {
 
         if (firstFlagCutoff === null && rescored.crash.status === 'danger') {
           firstFlagCutoff = cutoff;
-          notifyCrashPredicted({ hour: cutoff, total, crash: rescored.crash, th, simControl, currentDo: curDo });
+          notifyCrashPredicted({ hour: cutoff, total, crash: rescored.crash, th, simControl, currentDo: curDo, oneHour: rescored.forecast.one_hour });
         }
       }});
     }
@@ -2245,7 +2258,6 @@ async function runUploadWalkForward(file) {
 
 async function runManualPredict() {
   const mode = document.querySelector('.manual-tab.active').dataset.mode;
-  const btn = document.getElementById('manualPredictBtn');
 
   if (mode === 'upload') {
     if (selectedSample) {
@@ -2280,23 +2292,11 @@ async function runManualPredict() {
     if (readings.length === 0) { alert('Enter at least one hourly DO reading.'); return; }
   }
 
-  if (readings.length >= 2) {
-    await runSequenceSimulation(readings);
-    return;
-  }
-
-  btn.disabled = true; btn.textContent = 'Predicting…';
-  try {
-    const data = await fetchManualPrediction(readings);
-    if (data.error) { alert(data.error); return; }
-    renderManualResult(data, 'Feed: manual quick reading');
-    await playLiveForecast(data);
-  } catch (err) {
-    console.error('manual predict failed', err);
-    alert('Prediction failed — check the server console.');
-  } finally {
-    btn.disabled = false; btn.textContent = '▶ Predict From This Data';
-  }
+  // Quick (single-reading) entries go through the exact same animated
+  // walk-forward as multi-row sequences and file uploads — one code path,
+  // one live-readout/hardware-sync behavior, everywhere. A single reading
+  // just means the "walk" is one checkpoint instead of many.
+  await runSequenceSimulation(readings);
 }
 document.getElementById('manualPredictBtn').addEventListener('click', runManualPredict);
 

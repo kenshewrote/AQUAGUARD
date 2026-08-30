@@ -110,18 +110,6 @@ def assets(filename):
     return send_from_directory("assets", filename)
 
 
-@app.route("/api/series")
-def get_series():
-    """
-    Returns a window of actual history plus the model's forecast
-    (mean + confidence band) for the dashboard chart.
-    """
-    lookback_hours = int(request.args.get("lookback", 72))
-    with predict_lock:
-        payload = predictor.predict_series_bundle(df, lookback_hours=lookback_hours)
-    return jsonify(payload)
-
-
 @app.route("/api/predict_latest")
 def predict_latest():
     """
