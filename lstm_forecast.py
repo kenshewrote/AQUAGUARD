@@ -15,7 +15,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
-FEATURE_COLS = ["do_mean", "temp_mean", "ph_mean"]
+FEATURE_COLS = ["do_mean", "temp_mean", "ph_mean", "do_slope"]
 STEP_MINUTES = 5
 LOOKBACK_STEPS = 96  # 8 hours of 5-min history
 HORIZON_STEPS = 72  # 6 hours ahead at 5-min
@@ -113,6 +113,15 @@ def rows_to_feature_frame(rows: list[dict] | pd.DataFrame) -> pd.DataFrame:
         out["ph_mean"] = 7.5
     else:
         out["ph_mean"] = out["ph_mean"].fillna(out["ph_mean"].median())
+
+    # Rate of change of DO, computed (not parsed from raw columns, so it works
+    # for any input source: demo file, upload, or manual entry) so the model
+    # gets an explicit "how fast is this falling right now" signal instead of
+    # having to infer slope implicitly from the raw level trajectory. Added
+    # after finding the model badly lagged sharp DO declines — it only flagged
+    # danger once the CURRENT reading was already below critical, not ahead
+    # of it, on a fast-crash demo file.
+    out["do_slope"] = out["do_mean"].diff().fillna(0.0)
 
     return out[["timestamp"] + FEATURE_COLS]
 
